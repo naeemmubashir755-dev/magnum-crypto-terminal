@@ -75,16 +75,34 @@ const removeCoinFromWatchlist = (coinId) => {
   }
 };
 
-const renderWatchlistRows = (coins) => {
+const filterCoinsByQuery = (coins, query) => {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return coins;
+  }
+
+  return coins.filter((coin) => {
+    const name = (coin.name || '').toLowerCase();
+    const symbol = (coin.symbol || '').toLowerCase();
+    return name.includes(normalizedQuery) || symbol.includes(normalizedQuery);
+  });
+};
+
+const renderWatchlistRows = (coins, query = '') => {
   const body = document.getElementById('watchlist-body');
   const status = document.getElementById('watchlist-status');
+  const filteredCoins = filterCoinsByQuery(coins, query);
 
   if (!body) {
     return;
   }
 
-  if (!coins.length) {
-    renderEmptyState();
+  if (!filteredCoins.length) {
+    body.innerHTML = '<tr><td colspan="7">No matching coins found.</td></tr>';
+    if (status) {
+      status.textContent = 'No matching coins found.';
+    }
     return;
   }
 
@@ -92,7 +110,7 @@ const renderWatchlistRows = (coins) => {
     status.textContent = 'Showing your saved cryptocurrencies.';
   }
 
-  body.innerHTML = coins
+  body.innerHTML = filteredCoins
     .map(
       (coin) => `
         <tr data-coin-id="${coin.id}">
@@ -130,6 +148,13 @@ const loadWatchlistData = async () => {
 
     const coins = marketData.filter(Boolean);
     renderWatchlistRows(coins);
+
+    const searchInput = document.getElementById('watchlist-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (event) => {
+        renderWatchlistRows(coins, event.target.value);
+      });
+    }
   } catch (error) {
     console.error('Could not load watchlist data:', error);
 
