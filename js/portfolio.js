@@ -2,6 +2,12 @@
   'use strict';
 
   const HOLDINGS_STORAGE_KEY = 'crypto-portfolio-holdings';
+  const marketPriceState = {
+    marketDataRequest: null,
+    coinDetailRequests: new Map(),
+    prices: new Map(),
+    refreshId: 0,
+  };
 
   // Static display values until portfolio calculations and data persistence are added.
   const portfolioPlaceholder = Object.freeze({
@@ -51,25 +57,128 @@
       maximumFractionDigits: 2,
     }).format(value);
 
+  const formatCurrentValue = (value) => formatBuyPrice(value);
+
+  const getHoldingKey = (coin) => String(coin || '').trim().toLowerCase();
+
+  const getCoinIdentifier = (coin) => getHoldingKey(coin).replace(/\s+/g, '-');
+
+  const getMarketDataOnce = () => {
+    if (!marketPriceState.marketDataRequest) {
+      marketPriceState.marketDataRequest = window.fetchMarketData(250);
+    }
+
+    return marketPriceState.marketDataRequest;
+  };
+
+  const getCoinDetailsOnce = (coinIdentifier) => {
+    if (!marketPriceState.coinDetailRequests.has(coinIdentifier)) {
+      marketPriceState.coinDetailRequests.set(coinIdentifier, window.fetchCoinDetails(coinIdentifier));
+    }
+
+    return marketPriceState.coinDetailRequests.get(coinIdentifier);
+  };
+
+  const createMarketPriceLookup = (coins) => {
+    const prices = new Map();
+
+    coins.forEach((coin) => {
+      const price = Number(coin.current_price);
+      if (!Number.isFinite(price)) {
+        return;
+      }
+
+      [coin.id, coin.name, coin.symbol].forEach((identifier) => {
+        const key = getHoldingKey(identifier);
+        if (key) {
+          prices.set(key, price);
+        }
+      });
+    });
+
+    return prices;
+  };
+
+  const fetchCurrentPrices = async (holdings) => {
+    const holdingKeys = [...new Set(holdings.map((holding) => getHoldingKey(holding?.coin)).filter(Boolean))];
+    if (!holdingKeys.length) {
+      return new Map();
+    }
+
+    let prices = new Map();
+
+    try {
+      const marketCoins = await getMarketDataOnce();
+      prices = createMarketPriceLookup(marketCoins);
+    } catch (error) {
+      console.error('Could not load the market price list:', error);
+    }
+
+    // Only fall back to a detail request for unique holdings missing from the bulk response.
+    await Promise.all(
+      holdingKeys
+        .filter((holdingKey) => !prices.has(holdingKey))
+        .map(async (holdingKey) => {
+          try {
+            const coin = await getCoinDetailsOnce(getCoinIdentifier(holdingKey));
+            const price = Number(coin.market_data?.current_price?.usd);
+
+            if (Number.isFinite(price)) {
+              prices.set(holdingKey, price);
+            }
+          } catch (error) {
+            console.error(`Could not load the current price for ${holdingKey}:`, error);
+          }
+        })
+    );
+
+    return prices;
+  };
+
+  const calculateCurrentValue = (holding, prices) => {
+    const quantity = Number(holding?.quantity);
+    const price = prices.get(getHoldingKey(holding?.coin));
+
+    if (!Number.isFinite(quantity) || !Number.isFinite(price)) {
+      return null;
+    }
+
+    return quantity * price;
+  };
+
+  const calculateTotalPortfolioValue = (holdings, prices) => {
+    let total = 0;
+
+    for (const holding of holdings) {
+      const currentValue = calculateCurrentValue(holding, prices);
+      if (currentValue === null) {
+        return null;
+      }
+
+      total += currentValue;
+    }
+
+    return total;
+  };
+
   const createTableCell = (value) => {
     const cell = document.createElement('td');
     cell.textContent = value;
     return cell;
   };
 
-  const renderHoldings = () => {
+  const renderHoldings = (holdings = getSavedHoldings(), prices = marketPriceState.prices) => {
     const tableBody = document.getElementById('holdings-table-body');
     if (!tableBody) {
       return;
     }
 
-    const holdings = getSavedHoldings();
     tableBody.replaceChildren();
 
     if (!holdings.length) {
       const row = document.createElement('tr');
       const cell = createTableCell('No holdings have been added yet.');
-      cell.colSpan = 5;
+      cell.colSpan = 6;
       row.appendChild(cell);
       tableBody.appendChild(row);
       return;
@@ -80,12 +189,14 @@
       const savedHolding = holding && typeof holding === 'object' ? holding : {};
       const quantity = Number(savedHolding.quantity);
       const buyPrice = Number(savedHolding.buyPrice);
+      const currentValue = calculateCurrentValue(savedHolding, prices);
 
       row.append(
         createTableCell(savedHolding.coin || 'Unknown coin'),
         createTableCell(Number.isFinite(quantity) ? String(quantity) : '--'),
         createTableCell(Number.isFinite(buyPrice) ? formatBuyPrice(buyPrice) : '--'),
-        createTableCell(savedHolding.purchaseDate || '--')
+        createTableCell(savedHolding.purchaseDate || '--'),
+        createTableCell(currentValue === null ? '--' : formatCurrentValue(currentValue))
       );
 
       const actionCell = document.createElement('td');
@@ -108,6 +219,34 @@
 
     status.textContent = message;
     status.className = `holding-form-status ${type}`.trim();
+  };
+
+  const refreshPortfolioValues = async () => {
+    const refreshId = ++marketPriceState.refreshId;
+    const holdings = getSavedHoldings();
+
+    if (!holdings.length) {
+      marketPriceState.prices = new Map();
+      renderHoldings(holdings);
+      renderPortfolioSummary({ ...portfolioPlaceholder, totalValue: formatCurrentValue(0) });
+      return;
+    }
+
+    renderHoldings(holdings);
+    const prices = await fetchCurrentPrices(holdings);
+
+    if (refreshId !== marketPriceState.refreshId) {
+      return;
+    }
+
+    marketPriceState.prices = prices;
+    renderHoldings(holdings, prices);
+
+    const totalValue = calculateTotalPortfolioValue(holdings, prices);
+    renderPortfolioSummary({
+      ...portfolioPlaceholder,
+      totalValue: totalValue === null ? '--' : formatCurrentValue(totalValue),
+    });
   };
 
   const getToday = () => {
@@ -166,7 +305,7 @@
       saveHolding(createHoldingFromForm(form));
       form.reset();
       setFormStatus('Holding saved.', 'success');
-      renderHoldings();
+      refreshPortfolioValues();
     } catch (error) {
       console.error('Could not save portfolio holding:', error);
       setFormStatus('We could not save this holding. Please try again.', 'error');
@@ -189,7 +328,7 @@
     try {
       holdings.splice(holdingIndex, 1);
       saveHoldings(holdings);
-      renderHoldings();
+      refreshPortfolioValues();
       setFormStatus('Holding deleted.', 'success');
     } catch (error) {
       console.error('Could not delete portfolio holding:', error);
@@ -209,6 +348,6 @@
 
     const holdingsTableBody = document.getElementById('holdings-table-body');
     holdingsTableBody?.addEventListener('click', handleHoldingDeletion);
-    renderHoldings();
+    refreshPortfolioValues();
   });
 })();
