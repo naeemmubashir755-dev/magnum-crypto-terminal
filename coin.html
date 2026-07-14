@@ -28,15 +28,34 @@
 
     <main>
       <!-- Coin Header Section -->
-      <section aria-labelledby="coin-header-title" style="margin-bottom: 2rem;">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-          <img id="coin-logo" src="" alt="Coin logo" style="width: 3rem; height: 3rem; border-radius: 50%;" />
-          <div>
-            <h1 id="coin-header-title" style="margin: 0;">Coin Name</h1>
-            <p id="coin-symbol" style="margin: 0.25rem 0; font-size: 0.9rem;">Symbol</p>
+      <section aria-labelledby="coin-header-title" class="coin-hero-section">
+        <article class="coin-hero-card">
+          <div class="coin-hero-main">
+            <div class="coin-hero-identity">
+              <img id="coin-logo" src="" alt="Coin logo" style="width: 3rem; height: 3rem; border-radius: 50%;" />
+              <div>
+                <h1 id="coin-header-title" style="margin: 0;">Coin Name</h1>
+                <p id="coin-symbol" style="margin: 0.25rem 0; font-size: 0.9rem;">Symbol</p>
+              </div>
+            </div>
+            <button id="watchlist-btn" class="btn-secondary" type="button">Add to Watchlist</button>
           </div>
-          <button id="watchlist-btn" class="btn-secondary" type="button">Add to Watchlist</button>
-        </div>
+
+          <dl class="coin-hero-stats" aria-label="Coin summary">
+            <div>
+              <dt>Market Rank</dt>
+              <dd id="coin-rank-header">#0</dd>
+            </div>
+            <div>
+              <dt>Current Price</dt>
+              <dd id="coin-price-header">$0.00</dd>
+            </div>
+            <div>
+              <dt>24h Change</dt>
+              <dd id="coin-change-header" class="price-positive">0.00%</dd>
+            </div>
+          </dl>
+        </article>
       </section>
 
       <!-- Price Summary Section -->

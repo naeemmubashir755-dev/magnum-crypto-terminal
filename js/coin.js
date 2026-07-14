@@ -288,6 +288,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const symbol = document.getElementById('coin-symbol');
     if (symbol) symbol.textContent = coin.symbol?.toUpperCase() || 'N/A';
 
+    // Populate the enhanced coin header summary.
+    const rankHeader = document.getElementById('coin-rank-header');
+    if (rankHeader) rankHeader.textContent = `#${coin.market_cap_rank || 'N/A'}`;
+
+    const priceHeader = document.getElementById('coin-price-header');
+    if (priceHeader) priceHeader.textContent = formatCurrency(coin.market_data?.current_price?.usd);
+
+    const changeHeader = document.getElementById('coin-change-header');
+    if (changeHeader) {
+      const changeValue = coin.market_data?.price_change_percentage_24h || 0;
+      const sign = changeValue >= 0 ? '+' : '';
+      changeHeader.textContent = `${sign}${changeValue.toFixed(2)}%`;
+      changeHeader.classList.remove('price-positive', 'price-negative');
+      changeHeader.classList.add(changeValue >= 0 ? 'price-positive' : 'price-negative');
+    }
+
     // Populate price summary.
     const price = document.getElementById('coin-price');
     if (price) price.textContent = formatCurrency(coin.market_data?.current_price?.usd);

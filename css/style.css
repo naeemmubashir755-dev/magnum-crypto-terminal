@@ -102,6 +102,84 @@ table tbody tr:hover {
   background: rgba(56, 189, 248, 0.08);
 }
 
+.coin-hero-section {
+  margin-bottom: 2rem;
+}
+
+.coin-hero-card {
+  padding: 1.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--surface-color), rgba(56, 189, 248, 0.06));
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+}
+
+.coin-hero-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.coin-hero-identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.coin-hero-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.coin-hero-stats > div {
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.coin-hero-stats dt {
+  font-size: 0.8rem;
+  color: var(--muted-text-color);
+  margin-bottom: 0.35rem;
+}
+
+.coin-hero-stats dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.watchlist-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.watchlist-list li {
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface-color);
+  color: var(--text-color);
+}
+
+.watchlist-empty {
+  padding: 0.9rem 1rem;
+  border: 1px dashed var(--border-color);
+  border-radius: 0.75rem;
+  color: var(--muted-text-color);
+  background: rgba(255, 255, 255, 0.02);
+}
+
 button,
 input,
 select,
