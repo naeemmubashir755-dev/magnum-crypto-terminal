@@ -22,6 +22,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Log the full response for debugging purposes.
     console.log('Coin details response:', coin);
 
+    // Fetch 30 days of historical price data after the coin details load.
+    try {
+      const history = await window.fetchCoinHistory(coinId, 30);
+      console.log('Coin history response:', history);
+    } catch (historyError) {
+      console.error('Could not load coin history:', historyError);
+    }
+
     // Format numbers for display.
     const formatCurrency = (value) =>
       new Intl.NumberFormat('en-US', {
