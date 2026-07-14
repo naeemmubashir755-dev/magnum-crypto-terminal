@@ -1,4 +1,13 @@
 const STORAGE_KEY = 'crypto-watchlist';
+const REFRESH_INTERVAL_MS = 30000;
+
+const state = {
+  coins: [],
+  query: '',
+  sortKey: 'name',
+  sortDirection: 'asc',
+  refreshTimer: null,
+};
 
 const getWatchlist = () => {
   try {
@@ -28,51 +37,42 @@ const formatPercentage = (value) => {
 
 const formatMarketCap = (value) => formatCurrency(value || 0);
 
+const setStatusMessage = (message, isRefreshing = false) => {
+  const status = document.getElementById('watchlist-status');
+  if (!status) {
+    return;
+  }
+
+  if (isRefreshing) {
+    status.innerHTML = '<span style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.9rem;color:#f59e0b;"><span style="width:0.55rem;height:0.55rem;border-radius:999px;background:currentColor;display:inline-block;animation:pulse 1s infinite;"></span>Updating...</span>';
+    return;
+  }
+
+  status.textContent = message;
+};
+
 const renderLoadingState = () => {
   const body = document.getElementById('watchlist-body');
-  const status = document.getElementById('watchlist-status');
 
   if (body) {
-    body.innerHTML = '<tr><td colspan="6"><div class="table-status"><div class="spinner"></div><span>Loading watchlist...</span></div></td></tr>';
+    body.innerHTML = '<tr><td colspan="7"><div class="table-status"><div class="spinner"></div><span>Loading watchlist...</span></div></td></tr>';
   }
 
-  if (status) {
-    status.textContent = 'Loading watchlist...';
-  }
+  setStatusMessage('Loading watchlist...');
 };
 
 const renderEmptyState = () => {
   const body = document.getElementById('watchlist-body');
-  const status = document.getElementById('watchlist-status');
 
   if (body) {
-    body.innerHTML = '<tr><td colspan="6">Your watchlist is empty.</td></tr>';
+    body.innerHTML = '<tr><td colspan="7">Your watchlist is empty.</td></tr>';
   }
 
-  if (status) {
-    status.textContent = 'Your watchlist is empty.';
-  }
+  setStatusMessage('Your watchlist is empty.');
 };
 
 const saveWatchlist = (watchlist) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(watchlist));
-};
-
-const removeCoinFromWatchlist = (coinId) => {
-  const watchlist = getWatchlist().filter((savedId) => savedId !== coinId);
-  saveWatchlist(watchlist);
-
-  const body = document.getElementById('watchlist-body');
-  if (body) {
-    const row = body.querySelector(`tr[data-coin-id="${coinId}"]`);
-    if (row) {
-      row.remove();
-    }
-  }
-
-  if (!watchlist.length) {
-    renderEmptyState();
-  }
 };
 
 const filterCoinsByQuery = (coins, query) => {
@@ -118,113 +118,186 @@ const sortCoins = (coins, sortKey, direction) => {
   return sortedCoins;
 };
 
-const renderWatchlistRows = (coins, query = '', sortKey = 'name', direction = 'asc') => {
+const getRowMarkup = (coin) => `
+  <td><img src="${coin.image || ''}" alt="${coin.name || 'Coin'} logo" class="market-logo" /></td>
+  <td>${coin.name || 'Unknown Coin'}</td>
+  <td>${coin.symbol?.toUpperCase() || 'N/A'}</td>
+  <td>${formatCurrency(coin.current_price)}</td>
+  <td class="${coin.price_change_percentage_24h >= 0 ? 'price-positive' : 'price-negative'}">${formatPercentage(coin.price_change_percentage_24h)}</td>
+  <td>${formatMarketCap(coin.market_cap)}</td>
+  <td><button type="button" class="btn-danger" data-remove-coin="${coin.id}">Remove</button></td>
+`;
+
+const renderWatchlistRows = (coins = state.coins, query = state.query, sortKey = state.sortKey, direction = state.sortDirection) => {
   const body = document.getElementById('watchlist-body');
-  const status = document.getElementById('watchlist-status');
-  const filteredCoins = filterCoinsByQuery(coins, query);
-  const sortedCoins = sortCoins(filteredCoins, sortKey, direction);
 
   if (!body) {
     return;
   }
 
-  if (!filteredCoins.length) {
-    body.innerHTML = '<tr><td colspan="7">No matching coins found.</td></tr>';
-    if (status) {
-      status.textContent = 'No matching coins found.';
-    }
+  state.coins = Array.isArray(coins) ? coins : [];
+  state.query = query || '';
+  state.sortKey = sortKey || 'name';
+  state.sortDirection = direction || 'asc';
+
+  const filteredCoins = filterCoinsByQuery(state.coins, state.query);
+  const sortedCoins = sortCoins(filteredCoins, state.sortKey, state.sortDirection);
+
+  if (!state.coins.length) {
+    renderEmptyState();
     return;
   }
 
-  if (status) {
-    status.textContent = 'Showing your saved cryptocurrencies.';
+  if (!sortedCoins.length) {
+    body.innerHTML = '<tr><td colspan="7">No matching coins found.</td></tr>';
+    setStatusMessage('No matching coins found.');
+    return;
   }
 
-  body.innerHTML = sortedCoins
-    .map(
-      (coin) => `
-        <tr data-coin-id="${coin.id}">
-          <td><img src="${coin.image || ''}" alt="${coin.name || 'Coin'} logo" class="market-logo" /></td>
-          <td>${coin.name || 'Unknown Coin'}</td>
-          <td>${coin.symbol?.toUpperCase() || 'N/A'}</td>
-          <td>${formatCurrency(coin.current_price)}</td>
-          <td class="${coin.price_change_percentage_24h >= 0 ? 'price-positive' : 'price-negative'}">${formatPercentage(coin.price_change_percentage_24h)}</td>
-          <td>${formatMarketCap(coin.market_cap)}</td>
-          <td><button type="button" class="btn-danger" data-remove-coin="${coin.id}">Remove</button></td>
-        </tr>
-      `
-    )
-    .join('');
+  setStatusMessage('Showing your saved cryptocurrencies.');
+
+  const existingRows = Array.from(body.querySelectorAll('tr[data-coin-id]'));
+  const existingRowMap = new Map(existingRows.map((row) => [row.dataset.coinId, row]));
+  const visibleCoinIds = new Set(sortedCoins.map((coin) => coin.id));
+
+  existingRows.forEach((row) => {
+    if (!visibleCoinIds.has(row.dataset.coinId)) {
+      row.remove();
+    }
+  });
+
+  sortedCoins.forEach((coin, index) => {
+    let row = existingRowMap.get(coin.id);
+
+    if (!row) {
+      row = document.createElement('tr');
+      row.dataset.coinId = coin.id;
+      body.appendChild(row);
+      existingRowMap.set(coin.id, row);
+    }
+
+    row.innerHTML = getRowMarkup(coin);
+    row.dataset.coinId = coin.id;
+    row.className = '';
+
+    const targetRow = body.children[index] || null;
+    if (targetRow !== row) {
+      body.insertBefore(row, targetRow);
+    }
+  });
 };
 
-const attachSorting = (coins) => {
+const attachSorting = () => {
   const headers = document.querySelectorAll('#watchlist-table thead th');
-  let currentSortKey = 'name';
-  let currentDirection = 'asc';
 
   headers.forEach((header) => {
-    const sortKey = header.dataset.sortKey;
-    if (!sortKey) {
+    const sortKey = header.dataset.sortKey || header.textContent.trim().toLowerCase();
+    const mappedSortKey = {
+      'coin name': 'name',
+      'current price (usd)': 'current_price',
+      '24h change (%)': 'price_change_percentage_24h',
+      'market cap': 'market_cap',
+    }[sortKey];
+
+    if (!mappedSortKey) {
       return;
     }
 
     header.style.cursor = 'pointer';
     header.addEventListener('click', () => {
-      if (currentSortKey === sortKey) {
-        currentDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+      if (state.sortKey === mappedSortKey) {
+        state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
       } else {
-        currentSortKey = sortKey;
-        currentDirection = 'asc';
+        state.sortKey = mappedSortKey;
+        state.sortDirection = 'asc';
       }
 
-      const searchInput = document.getElementById('watchlist-search');
-      const query = searchInput?.value || '';
-      renderWatchlistRows(coins, query, currentSortKey, currentDirection);
+      renderWatchlistRows(state.coins, state.query, state.sortKey, state.sortDirection);
     });
   });
 };
 
-const loadWatchlistData = async () => {
+const refreshWatchlistData = async () => {
   const watchlist = getWatchlist();
+
+  if (!watchlist.length) {
+    state.coins = [];
+    renderEmptyState();
+    return;
+  }
+
+  setStatusMessage('', true);
+
+  const uniqueCoinIds = [...new Set(watchlist)];
+
+  try {
+    const marketItems = await window.fetchMarketData(100);
+    const coins = uniqueCoinIds
+      .map((coinId) => marketItems.find((item) => item.id === coinId) || null)
+      .filter(Boolean);
+
+    renderWatchlistRows(coins);
+  } catch (error) {
+    console.error('Could not refresh watchlist data:', error);
+    setStatusMessage('We could not refresh your watchlist right now.');
+  }
+};
+
+const startAutoRefresh = () => {
+  if (state.refreshTimer) {
+    return;
+  }
+
+  state.refreshTimer = window.setInterval(() => {
+    refreshWatchlistData();
+  }, REFRESH_INTERVAL_MS);
+};
+
+const removeCoinFromWatchlist = (coinId) => {
+  const watchlist = getWatchlist().filter((savedId) => savedId !== coinId);
+  saveWatchlist(watchlist);
+
+  state.coins = state.coins.filter((coin) => coin.id !== coinId);
 
   if (!watchlist.length) {
     renderEmptyState();
     return;
   }
 
+  renderWatchlistRows(state.coins, state.query, state.sortKey, state.sortDirection);
+};
+
+const loadWatchlistData = async () => {
+  const watchlist = getWatchlist();
+
+  if (!watchlist.length) {
+    state.coins = [];
+    renderEmptyState();
+    return;
+  }
+
   renderLoadingState();
 
-  const uniqueCoinIds = [...new Set(watchlist)];
-
   try {
-    const marketData = await Promise.all(
-      uniqueCoinIds.map((coinId) =>
-        window.fetchMarketData(100).then((marketItems) => marketItems.find((item) => item.id === coinId) || null)
-      )
-    );
-
-    const coins = marketData.filter(Boolean);
-    renderWatchlistRows(coins);
-    attachSorting(coins);
-
-    const searchInput = document.getElementById('watchlist-search');
-    if (searchInput) {
-      searchInput.addEventListener('input', (event) => {
-        renderWatchlistRows(coins, event.target.value);
-      });
-    }
+    await refreshWatchlistData();
+    startAutoRefresh();
   } catch (error) {
     console.error('Could not load watchlist data:', error);
-
-    const body = document.getElementById('watchlist-body');
-    if (body) {
-      body.innerHTML = '<tr><td colspan="6">We could not load your watchlist right now.</td></tr>';
-    }
+    setStatusMessage('We could not load your watchlist right now.');
   }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
   const body = document.getElementById('watchlist-body');
+  const searchInput = document.getElementById('watchlist-search');
+
+  attachSorting();
+
+  if (searchInput) {
+    searchInput.addEventListener('input', (event) => {
+      renderWatchlistRows(state.coins, event.target.value, state.sortKey, state.sortDirection);
+    });
+  }
 
   body?.addEventListener('click', (event) => {
     const button = event.target.closest('button[data-remove-coin]');
