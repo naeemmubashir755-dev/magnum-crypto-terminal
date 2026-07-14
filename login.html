@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | Crypto Terminal</title>
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/utils.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+          <li><a href="login.html" aria-current="page">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+        </ul>
+        <button type="button" id="theme-toggle" class="btn-secondary">Dark mode</button>
+      </nav>
+    </header>
+
+    <aside aria-label="Sidebar navigation">
+      <nav>
+        <ul>
+          <li><a href="index.html"><span aria-hidden="true">⌂</span> Dashboard</a></li>
+          <li><a href="markets.html"><span aria-hidden="true">📈</span> Markets</a></li>
+          <li><a href="portfolio.html"><span aria-hidden="true">💼</span> Portfolio</a></li>
+          <li><a href="watchlist.html"><span aria-hidden="true">⭐</span> Watchlist</a></li>
+          <li><a href="login.html" aria-current="page"><span aria-hidden="true">🔐</span> Login</a></li>
+          <li><a href="register.html"><span aria-hidden="true">📝</span> Register</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section aria-labelledby="login-title">
+        <h1 id="login-title">Login</h1>
+        <p>Access your account to manage your crypto journey.</p>
+      </section>
+
+      <form>
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" placeholder="you@example.com" />
+        </div>
+
+        <div>
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="Enter your password" />
+        </div>
+
+        <div>
+          <label>
+            <input name="remember" type="checkbox" />
+            Remember Me
+          </label>
+        </div>
+
+        <button type="submit">Login</button>
+      </form>
+
+      <p>
+        <a href="register.html">Register</a>
+        <span> | </span>
+        <a href="#">Forgot Password</a>
+      </p>
+    </main>
+  </body>
+</html>

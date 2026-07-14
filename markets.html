@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Markets | Crypto Terminal</title>
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/markets.js" defer></script>
+    <script src="js/utils.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html" aria-current="page">Markets</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+          <li><a href="login.html">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+        </ul>
+        <button type="button" id="theme-toggle" class="btn-secondary">Dark mode</button>
+      </nav>
+    </header>
+
+    <aside aria-label="Sidebar navigation">
+      <nav>
+        <ul>
+          <li><a href="index.html"><span aria-hidden="true">⌂</span> Dashboard</a></li>
+          <li><a href="markets.html" aria-current="page"><span aria-hidden="true">📈</span> Markets</a></li>
+          <li><a href="portfolio.html"><span aria-hidden="true">💼</span> Portfolio</a></li>
+          <li><a href="watchlist.html"><span aria-hidden="true">⭐</span> Watchlist</a></li>
+          <li><a href="login.html"><span aria-hidden="true">🔐</span> Login</a></li>
+          <li><a href="register.html"><span aria-hidden="true">📝</span> Register</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section aria-labelledby="markets-title">
+        <h1 id="markets-title">Markets</h1>
+        <p>Browse the latest cryptocurrency markets and track price movements.</p>
+      </section>
+
+      <section aria-labelledby="market-search-title">
+        <h2 id="market-search-title">Search Markets</h2>
+        <label for="market-search">Search cryptocurrencies</label>
+        <input id="market-search" name="market-search" type="search" placeholder="Search by name or symbol" />
+      </section>
+
+      <section aria-labelledby="market-table-title">
+        <h2 id="market-table-title">Market Overview</h2>
+        <div id="table-status" class="table-status" role="status" aria-live="polite">
+          Loading top cryptocurrencies...
+        </div>
+        <table id="market-table">
+          <thead>
+            <tr>
+              <th scope="col">Logo</th>
+              <th scope="col">Name</th>
+              <th scope="col">Symbol</th>
+              <th scope="col"><button type="button" class="btn-secondary" data-sort="price" data-label="Current Price (USD)">Current Price (USD)</button></th>
+              <th scope="col"><button type="button" class="btn-secondary" data-sort="change" data-label="24h Change (%)">24h Change (%)</button></th>
+              <th scope="col"><button type="button" class="btn-secondary" data-sort="marketCap" data-label="Market Cap">Market Cap</button></th>
+              <th scope="col"><button type="button" class="btn-secondary" data-sort="volume" data-label="Total Volume">Total Volume</button></th>
+            </tr>
+          </thead>
+          <tbody id="market-table-body"></tbody>
+        </table>
+      </section>
+
+      <div aria-label="Table pagination" style="margin-top: 1rem; display: flex; gap: 0.75rem; align-items: center;">
+        <button type="button" id="prev-page" class="btn-secondary">Previous</button>
+        <span id="page-indicator">Page 1</span>
+        <button type="button" id="next-page" class="btn-secondary">Next</button>
+      </div>
+    </main>
+
+    <script src="js/utils.js" defer></script>
+  </body>
+</html>

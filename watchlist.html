@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Watchlist | Crypto Terminal</title>
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/utils.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html" aria-current="page">Watchlist</a></li>
+          <li><a href="login.html">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+        </ul>
+        <button type="button" id="theme-toggle" class="btn-secondary">Dark mode</button>
+      </nav>
+    </header>
+
+    <aside aria-label="Sidebar navigation">
+      <nav>
+        <ul>
+          <li><a href="index.html"><span aria-hidden="true">⌂</span> Dashboard</a></li>
+          <li><a href="markets.html"><span aria-hidden="true">📈</span> Markets</a></li>
+          <li><a href="portfolio.html"><span aria-hidden="true">💼</span> Portfolio</a></li>
+          <li><a href="watchlist.html" aria-current="page"><span aria-hidden="true">⭐</span> Watchlist</a></li>
+          <li><a href="login.html"><span aria-hidden="true">🔐</span> Login</a></li>
+          <li><a href="register.html"><span aria-hidden="true">📝</span> Register</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section aria-labelledby="watchlist-title">
+        <h1 id="watchlist-title">Watchlist</h1>
+        <p>Monitor your favorite cryptocurrencies and track their latest movements.</p>
+      </section>
+
+      <section aria-labelledby="watchlist-form-title">
+        <h2 id="watchlist-form-title">Add Coin</h2>
+        <form id="watchlist-form">
+          <div>
+            <label for="coin-name">Coin name</label>
+            <input id="coin-name" name="coin-name" type="text" placeholder="e.g. Bitcoin" />
+          </div>
+          <button type="submit" class="btn-primary">Add to Watchlist</button>
+        </form>
+      </section>
+
+      <section aria-labelledby="watchlist-search-title">
+        <h2 id="watchlist-search-title">Search Coins</h2>
+        <label for="watchlist-search">Search your watchlist</label>
+        <input id="watchlist-search" name="watchlist-search" type="search" placeholder="Search by coin name" />
+      </section>
+
+      <section aria-labelledby="watchlist-table-title">
+        <h2 id="watchlist-table-title">Your Watchlist</h2>
+        <table id="watchlist-table">
+          <thead>
+            <tr>
+              <th scope="col">Coin</th>
+              <th scope="col">Price</th>
+              <th scope="col">24h Change</th>
+              <th scope="col">Remove</th>
+            </tr>
+          </thead>
+          <tbody id="watchlist-body">
+            <tr>
+              <td colspan="4">No coins added yet.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const storageKey = 'crypto-watchlist';
+        const placeholderData = {
+          bitcoin: { price: '$68,420', change: '+2.4%' },
+          ethereum: { price: '$3,760', change: '+1.8%' },
+          solana: { price: '$180', change: '+4.1%' },
+          cardano: { price: '$0.78', change: '+1.2%' },
+          ripple: { price: '$0.62', change: '-0.5%' }
+        };
+
+        const form = document.getElementById('watchlist-form');
+        const coinInput = document.getElementById('coin-name');
+        const searchInput = document.getElementById('watchlist-search');
+        const tableBody = document.getElementById('watchlist-body');
+
+        const getWatchlist = () => {
+          try {
+            return JSON.parse(localStorage.getItem(storageKey)) || [];
+          } catch (error) {
+            return [];
+          }
+        };
+
+        const saveWatchlist = (items) => {
+          localStorage.setItem(storageKey, JSON.stringify(items));
+        };
+
+        const formatCoinName = (value) => {
+          return value.trim().replace(/\s+/g, ' ');
+        };
+
+        const renderWatchlist = (query = '') => {
+          const items = getWatchlist();
+          const normalizedQuery = query.trim().toLowerCase();
+          const filteredItems = items.filter((item) => item.name.toLowerCase().includes(normalizedQuery));
+
+          if (!filteredItems.length) {
+            tableBody.innerHTML = '<tr><td colspan="4">No matching coins.</td></tr>';
+            return;
+          }
+
+          tableBody.innerHTML = filteredItems
+            .map(
+              (item) => `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.price}</td>
+                  <td>${item.change}</td>
+                  <td><button type="button" class="btn-danger" data-remove="${item.name}">Remove</button></td>
+                </tr>
+              `
+            )
+            .join('');
+        };
+
+        const addCoin = (name) => {
+          const normalizedName = formatCoinName(name);
+          if (!normalizedName) return;
+
+          const items = getWatchlist();
+          if (items.some((item) => item.name.toLowerCase() === normalizedName.toLowerCase())) {
+            return;
+          }
+
+          const key = normalizedName.toLowerCase();
+          const placeholder = placeholderData[key] || { price: '$—', change: '—' };
+
+          items.push({
+            name: normalizedName,
+            price: placeholder.price,
+            change: placeholder.change
+          });
+
+          saveWatchlist(items);
+          renderWatchlist(searchInput?.value || '');
+        };
+
+        form?.addEventListener('submit', (event) => {
+          event.preventDefault();
+          addCoin(coinInput?.value || '');
+          form.reset();
+        });
+
+        searchInput?.addEventListener('input', (event) => {
+          renderWatchlist(event.target.value);
+        });
+
+        tableBody?.addEventListener('click', (event) => {
+          const button = event.target.closest('button[data-remove]');
+          if (!button) return;
+
+          const items = getWatchlist().filter((item) => item.name !== button.dataset.remove);
+          saveWatchlist(items);
+          renderWatchlist(searchInput?.value || '');
+        });
+
+        renderWatchlist();
+      });
+    </script>
+  </body>
+</html>

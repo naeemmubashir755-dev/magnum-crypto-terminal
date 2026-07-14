@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crypto Terminal</title>
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/utils.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <ul>
+          <li><a href="index.html" aria-current="page">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+          <li><a href="login.html">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+        </ul>
+        <button type="button" id="theme-toggle" class="btn-secondary">Dark mode</button>
+      </nav>
+    </header>
+
+    <aside aria-label="Sidebar navigation">
+      <nav>
+        <ul>
+          <li><a href="index.html" aria-current="page"><span aria-hidden="true">⌂</span> Dashboard</a></li>
+          <li><a href="markets.html"><span aria-hidden="true">📈</span> Markets</a></li>
+          <li><a href="portfolio.html"><span aria-hidden="true">💼</span> Portfolio</a></li>
+          <li><a href="watchlist.html"><span aria-hidden="true">⭐</span> Watchlist</a></li>
+          <li><a href="login.html"><span aria-hidden="true">🔐</span> Login</a></li>
+          <li><a href="register.html"><span aria-hidden="true">📝</span> Register</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section aria-labelledby="dashboard-title">
+        <h1 id="dashboard-title">Crypto Terminal Dashboard</h1>
+        <p>Track prices, manage your portfolio, and monitor your watchlist from a single dashboard.</p>
+      </section>
+
+      <section aria-labelledby="market-overview-title">
+        <h2 id="market-overview-title">Market Overview</h2>
+        <p>BTC: $68,420 | ETH: $3,760 | SOL: $180</p>
+      </section>
+
+      <section aria-labelledby="top-gainers-title">
+        <h2 id="top-gainers-title">Top Gainers</h2>
+        <ul>
+          <li>NEAR +12.4%</li>
+          <li>AVAX +9.8%</li>
+          <li>LINK +7.2%</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="top-losers-title">
+        <h2 id="top-losers-title">Top Losers</h2>
+        <ul>
+          <li>SHIB -6.1%</li>
+          <li>DOGE -4.9%</li>
+          <li>PEPE -3.7%</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="watchlist-title">
+        <h2 id="watchlist-title">Watchlist</h2>
+        <ul>
+          <li>BTC</li>
+          <li>ETH</li>
+          <li>SOL</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="news-title">
+        <h2 id="news-title">News</h2>
+        <article>
+          <h3>Market Update</h3>
+          <p>Bitcoin remains above the key resistance level after strong weekly momentum.</p>
+        </article>
+      </section>
+
+      <section aria-labelledby="fear-greed-title">
+        <h2 id="fear-greed-title">Fear &amp; Greed Index</h2>
+        <p>Current value: 72 (Greed)</p>
+      </section>
+
+      <section aria-labelledby="portfolio-summary-title">
+        <h2 id="portfolio-summary-title">Portfolio Summary</h2>
+        <p>Total Balance: $125,400 | 24h Change: +3.2%</p>
+      </section>
+    </main>
+  </body>
+</html>

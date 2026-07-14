@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portfolio | Crypto Terminal</title>
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/utils.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="portfolio.html" aria-current="page">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+          <li><a href="login.html">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+        </ul>
+        <button type="button" id="theme-toggle" class="btn-secondary">Dark mode</button>
+      </nav>
+    </header>
+
+    <aside aria-label="Sidebar navigation">
+      <nav>
+        <ul>
+          <li><a href="index.html"><span aria-hidden="true">⌂</span> Dashboard</a></li>
+          <li><a href="markets.html"><span aria-hidden="true">📈</span> Markets</a></li>
+          <li><a href="portfolio.html" aria-current="page"><span aria-hidden="true">💼</span> Portfolio</a></li>
+          <li><a href="watchlist.html"><span aria-hidden="true">⭐</span> Watchlist</a></li>
+          <li><a href="login.html"><span aria-hidden="true">🔐</span> Login</a></li>
+          <li><a href="register.html"><span aria-hidden="true">📝</span> Register</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section aria-labelledby="portfolio-title">
+        <h1 id="portfolio-title">Portfolio</h1>
+        <p>Track your holdings and monitor portfolio performance.</p>
+      </section>
+
+      <section aria-label="Portfolio summary cards">
+        <article>
+          <h2>Total Balance</h2>
+          <p>$125,400</p>
+        </article>
+        <article>
+          <h2>Total Profit/Loss</h2>
+          <p>+$12,300</p>
+        </article>
+        <article>
+          <h2>Best Performer</h2>
+          <p>Solana</p>
+        </article>
+        <article>
+          <h2>Worst Performer</h2>
+          <p>Dogecoin</p>
+        </article>
+      </section>
+
+      <section aria-labelledby="holdings-title">
+        <h2 id="holdings-title">Holdings</h2>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Asset</th>
+              <th scope="col">Amount</th>
+              <th scope="col">Average Cost</th>
+              <th scope="col">Current Value</th>
+              <th scope="col">P/L</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Bitcoin</td>
+              <td>0.42 BTC</td>
+              <td>$60,000</td>
+              <td>$28,700</td>
+              <td>+$1,200</td>
+            </tr>
+            <tr>
+              <td>Ethereum</td>
+              <td>3.10 ETH</td>
+              <td>$2,900</td>
+              <td>$11,656</td>
+              <td>+$456</td>
+            </tr>
+            <tr>
+              <td>Solana</td>
+              <td>15 SOL</td>
+              <td>$120</td>
+              <td>$2,700</td>
+              <td>+$600</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </body>
+</html>

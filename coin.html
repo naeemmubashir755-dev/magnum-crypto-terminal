@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coin Details | Crypto Terminal</title>
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <script src="js/app.js" defer></script>
+  <script src="js/navigation.js" defer></script>
+
+  <!-- This MUST come before coin.js -->
+  <script src="js/api.js" defer></script>
+
+  <script src="js/coin.js" defer></script>
+</head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <a href="markets.html">Back to Markets</a>
+      </nav>
+    </header>
+
+    <main>
+      <!-- Coin Header Section -->
+      <section aria-labelledby="coin-header-title" style="margin-bottom: 2rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+          <img id="coin-logo" src="" alt="Coin logo" style="width: 3rem; height: 3rem; border-radius: 50%;" />
+          <div>
+            <h1 id="coin-header-title" style="margin: 0;">Coin Name</h1>
+            <p id="coin-symbol" style="margin: 0.25rem 0; font-size: 0.9rem;">Symbol</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Price Summary Section -->
+      <section aria-labelledby="price-summary-title" style="margin-bottom: 2rem;">
+        <h2 id="price-summary-title">Price Summary</h2>
+        <dl style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">Current Price</dt>
+            <dd id="coin-price" style="margin: 0.5rem 0 0 0; font-size: 1.5rem; font-weight: 600;">$0.00</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">24h Change</dt>
+            <dd id="coin-change" style="margin: 0.5rem 0 0 0; font-size: 1.2rem; font-weight: 500;">0.00%</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">Market Rank</dt>
+            <dd id="coin-rank" style="margin: 0.5rem 0 0 0; font-size: 1.2rem; font-weight: 500;">#0</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Price Chart Section -->
+      <section id="chart-section" aria-labelledby="chart-title" style="margin-bottom: 2rem;">
+        <h2 id="chart-title">Price Chart</h2>
+        <div style="margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button data-days="1">1D</button>
+          <button data-days="7">7D</button>
+          <button data-days="30">30D</button>
+          <button data-days="90">90D</button>
+          <button data-days="365">1Y</button>
+          <button data-days="max">MAX</button>
+        </div>
+        <div id="price-chart"></div>
+      </section>
+
+      <!-- Market Statistics Section -->
+      <section aria-labelledby="market-statistics-title" style="margin-bottom: 2rem;">
+        <h2 id="market-statistics-title">Market Statistics</h2>
+        <dl style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">Market Cap</dt>
+            <dd id="coin-market-cap" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">Fully Diluted Valuation</dt>
+            <dd id="coin-fdv" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">Circulating Supply</dt>
+            <dd id="coin-circulating-supply" style="margin: 0.5rem 0 0 0; font-weight: 500;">0</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">Total Supply</dt>
+            <dd id="coin-total-supply" style="margin: 0.5rem 0 0 0; font-weight: 500;">0</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">Max Supply</dt>
+            <dd id="coin-max-supply" style="margin: 0.5rem 0 0 0; font-weight: 500;">0</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Price Statistics Section -->
+      <section aria-labelledby="price-statistics-title" style="margin-bottom: 2rem;">
+        <h2 id="price-statistics-title">Price Statistics</h2>
+        <dl style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">24h High</dt>
+            <dd id="coin-high-24h" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">24h Low</dt>
+            <dd id="coin-low-24h" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">All Time High</dt>
+            <dd id="coin-ath" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
+          </div>
+          <div>
+            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">All Time Low</dt>
+            <dd id="coin-atl" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
+          </div>
+        </dl>
+      </section>
+
+      <!-- Description Section -->
+      <section aria-labelledby="description-title" style="margin-bottom: 2rem;">
+        <h2 id="description-title">Description</h2>
+        <p id="coin-description" style="line-height: 1.6;">Placeholder description text.</p>
+      </section>
+
+      <!-- Links Section -->
+      <section aria-labelledby="links-title">
+        <h2 id="links-title">Links</h2>
+        <ul style="list-style: none; padding: 0;">
+          <li style="margin-bottom: 0.75rem;">
+            <strong>Official Website:</strong>
+            <a id="coin-website" href="#" target="_blank" rel="noopener noreferrer">https://example.com</a>
+          </li>
+          <li>
+            <strong>Blockchain Explorer:</strong>
+            <a id="coin-explorer" href="#" target="_blank" rel="noopener noreferrer">https://explorer.example.com</a>
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
