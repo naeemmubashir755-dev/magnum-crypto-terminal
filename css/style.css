@@ -197,12 +197,45 @@ table tbody tr:hover {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.portfolio-holding-form-section {
+  margin-bottom: 2rem;
+}
+
+.portfolio-holding-form-section h2 {
+  margin: 0 0 1rem;
+}
+
+.portfolio-holding-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+  align-items: end;
+  max-width: none;
+}
+
+.holding-form-status {
+  min-height: 1.25rem;
+  margin: 0.75rem 0 0;
+  color: var(--muted-text-color);
+}
+
+.holding-form-status.error {
+  color: var(--danger-color);
+}
+
+.holding-form-status.success {
+  color: var(--success-color);
+}
+
 @media (max-width: 768px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .portfolio-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portfolio-holding-form {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -213,6 +246,10 @@ table tbody tr:hover {
   }
 
   .portfolio-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-holding-form {
     grid-template-columns: 1fr;
   }
 }

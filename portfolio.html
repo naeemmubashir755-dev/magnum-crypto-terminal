@@ -68,6 +68,30 @@
         </div>
       </section>
 
+      <section class="portfolio-holding-form-section" aria-labelledby="add-holding-title">
+        <h2 id="add-holding-title">Add Holding</h2>
+        <form id="add-holding-form" class="portfolio-holding-form" novalidate>
+          <div>
+            <label for="holding-coin">Coin</label>
+            <input id="holding-coin" name="coin" type="text" maxlength="100" placeholder="e.g. Bitcoin" required />
+          </div>
+          <div>
+            <label for="holding-quantity">Quantity</label>
+            <input id="holding-quantity" name="quantity" type="number" min="0.00000001" step="any" placeholder="0.00" required />
+          </div>
+          <div>
+            <label for="holding-buy-price">Buy Price (USD)</label>
+            <input id="holding-buy-price" name="buyPrice" type="number" min="0.01" step="0.01" placeholder="0.00" required />
+          </div>
+          <div>
+            <label for="holding-purchase-date">Purchase Date</label>
+            <input id="holding-purchase-date" name="purchaseDate" type="date" required />
+          </div>
+          <button type="submit" class="btn-primary">Add Holding</button>
+        </form>
+        <p id="holding-form-status" class="holding-form-status" role="status" aria-live="polite"></p>
+      </section>
+
       <section aria-labelledby="holdings-title">
         <h2 id="holdings-title">Holdings</h2>
         <table>
