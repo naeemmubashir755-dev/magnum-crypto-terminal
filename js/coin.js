@@ -13,6 +13,57 @@ const formatHistoryForChart = (history) => {
   return { labels, prices };
 };
 
+const showChartStatus = (message, type = 'loading') => {
+  const chartContainer = document.getElementById('price-chart');
+
+  if (!chartContainer) {
+    return;
+  }
+
+  let status = chartContainer.querySelector('.chart-state');
+  if (!status) {
+    status = document.createElement('div');
+    status.className = 'chart-state';
+    chartContainer.appendChild(status);
+  }
+
+  status.className = `chart-state ${type}`;
+
+  if (type === 'loading') {
+    status.innerHTML = '<div class="spinner"></div><span>Loading historical prices...</span>';
+  } else {
+    status.innerHTML = `<span>${message}</span>`;
+  }
+
+  chartContainer.classList.toggle('is-loading', type === 'loading');
+  chartContainer.classList.toggle('has-error', type === 'error');
+
+  const canvas = chartContainer.querySelector('canvas');
+  if (canvas) {
+    canvas.style.opacity = type === 'loading' ? '0.45' : '1';
+  }
+};
+
+const hideChartStatus = () => {
+  const chartContainer = document.getElementById('price-chart');
+
+  if (!chartContainer) {
+    return;
+  }
+
+  const status = chartContainer.querySelector('.chart-state');
+  if (status) {
+    status.remove();
+  }
+
+  chartContainer.classList.remove('is-loading', 'has-error');
+
+  const canvas = chartContainer.querySelector('canvas');
+  if (canvas) {
+    canvas.style.opacity = '1';
+  }
+};
+
 const renderPriceChart = (labels, prices) => {
   const chartContainer = document.getElementById('price-chart');
 
@@ -20,7 +71,7 @@ const renderPriceChart = (labels, prices) => {
     return;
   }
 
-  chartContainer.style.height = '320px';
+  chartContainer.style.minHeight = '320px';
   chartContainer.style.position = 'relative';
 
   let canvas = chartContainer.querySelector('canvas');
@@ -51,6 +102,10 @@ const renderPriceChart = (labels, prices) => {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeInOutQuart',
+        },
         plugins: {
           legend: {
             display: false,
@@ -78,13 +133,17 @@ const renderPriceChart = (labels, prices) => {
         },
       },
     });
-
-    return;
+  } else {
+    window.priceChartInstance.data.labels = labels;
+    window.priceChartInstance.data.datasets[0].data = prices;
+    window.priceChartInstance.options.animation = {
+      duration: 800,
+      easing: 'easeInOutQuart',
+    };
+    window.priceChartInstance.update('active');
   }
 
-  window.priceChartInstance.data.labels = labels;
-  window.priceChartInstance.data.datasets[0].data = prices;
-  window.priceChartInstance.update();
+  hideChartStatus();
 };
 
 const setActiveTimeframeButton = (activeButton) => {
@@ -102,6 +161,13 @@ const setActiveTimeframeButton = (activeButton) => {
 };
 
 const loadHistoryAndRenderChart = async (coinId, days) => {
+  const chartContainer = document.getElementById('price-chart');
+  if (!chartContainer) {
+    return;
+  }
+
+  showChartStatus('Loading historical prices...', 'loading');
+
   try {
     const history = await window.fetchCoinHistory(coinId, days);
     console.log('Coin history response:', history);
@@ -110,9 +176,14 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     console.log('Labels:', labels);
     console.log('Prices:', prices);
 
+    if (!labels.length || !prices.length) {
+      throw new Error('No price history data was returned.');
+    }
+
     renderPriceChart(labels, prices);
   } catch (historyError) {
     console.error('Could not load coin history:', historyError);
+    showChartStatus('We could not load the chart data right now. Please try again.', 'error');
   }
 };
 

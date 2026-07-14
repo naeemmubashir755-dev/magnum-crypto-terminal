@@ -117,6 +117,97 @@ button {
   min-height: 2.6rem;
 }
 
+#chart-section {
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, var(--surface-color), rgba(56, 189, 248, 0.04));
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+}
+
+#chart-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+#chart-section button[data-days] {
+  background: var(--secondary-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  padding: 0.55rem 0.8rem;
+  min-height: auto;
+  transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+#chart-section button[data-days]:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent-color);
+}
+
+#chart-section button[data-days].active-timeframe {
+  background: var(--accent-color);
+  color: var(--bg-color);
+  border-color: var(--accent-color);
+}
+
+#price-chart {
+  position: relative;
+  min-height: 320px;
+  padding: 0.5rem 0.25rem 0.25rem;
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+#price-chart canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.chart-state {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 1rem;
+  background: rgba(2, 6, 23, 0.05);
+  backdrop-filter: blur(2px);
+  font-weight: 600;
+}
+
+.chart-state.error {
+  color: var(--danger-color);
+}
+
+@media (max-width: 768px) {
+  #chart-section {
+    padding: 1rem;
+  }
+
+  #price-chart {
+    min-height: 280px;
+  }
+
+  #chart-section button[data-days] {
+    flex: 1 1 calc(50% - 0.5rem);
+  }
+}
+
+@media (max-width: 480px) {
+  #price-chart {
+    min-height: 240px;
+  }
+
+  #chart-section button[data-days] {
+    flex: 1 1 100%;
+  }
+}
+
 .btn-primary {
   background: var(--accent-color);
   color: var(--bg-color);
