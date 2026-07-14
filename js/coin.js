@@ -187,6 +187,34 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
   }
 };
 
+const getWatchlist = () => {
+  try {
+    const storedWatchlist = localStorage.getItem('crypto-watchlist');
+    return storedWatchlist ? JSON.parse(storedWatchlist) : [];
+  } catch (error) {
+    console.error('Could not read watchlist:', error);
+    return [];
+  }
+};
+
+const saveWatchlist = (watchlist) => {
+  localStorage.setItem('crypto-watchlist', JSON.stringify(watchlist));
+};
+
+const addCoinToWatchlist = (coinId) => {
+  if (!coinId) {
+    return;
+  }
+
+  const watchlist = getWatchlist();
+  if (!watchlist.includes(coinId)) {
+    watchlist.push(coinId);
+    saveWatchlist(watchlist);
+  }
+
+  console.log('Updated watchlist:', watchlist);
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Read the id from the current URL.
   const params = new URLSearchParams(window.location.search);
@@ -214,6 +242,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         await loadHistoryAndRenderChart(coinId, days);
       });
     });
+
+    // Attach the watchlist action to the dedicated button.
+    const watchlistButton = document.getElementById('watchlist-btn');
+    if (watchlistButton) {
+      watchlistButton.addEventListener('click', () => {
+        addCoinToWatchlist(coinId);
+      });
+    }
 
     // Fetch the detailed coin information from the shared API helper.
     const coin = await window.fetchCoinDetails(coinId);
