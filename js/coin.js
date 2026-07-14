@@ -308,11 +308,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     const price = document.getElementById('coin-price');
     if (price) price.textContent = formatCurrency(coin.market_data?.current_price?.usd);
 
+    const priceCard = document.getElementById('coin-price-card');
+    if (priceCard) priceCard.textContent = formatCurrency(coin.market_data?.current_price?.usd);
+
     const change = document.getElementById('coin-change');
     if (change) {
       const changeValue = coin.market_data?.price_change_percentage_24h || 0;
       const sign = changeValue >= 0 ? '+' : '';
       change.textContent = `${sign}${changeValue.toFixed(2)}%`;
+      change.classList.remove('price-positive', 'price-negative');
+      change.classList.add(changeValue >= 0 ? 'price-positive' : 'price-negative');
+    }
+
+    const changeCard = document.getElementById('coin-change-card');
+    if (changeCard) {
+      const changeValue = coin.market_data?.price_change_percentage_24h || 0;
+      const sign = changeValue >= 0 ? '+' : '';
+      changeCard.textContent = `${sign}${changeValue.toFixed(2)}%`;
+      changeCard.classList.remove('price-positive', 'price-negative');
+      changeCard.classList.add(changeValue >= 0 ? 'price-positive' : 'price-negative');
     }
 
     const rank = document.getElementById('coin-rank');

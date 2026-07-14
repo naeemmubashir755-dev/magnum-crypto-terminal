@@ -119,26 +119,34 @@
       </section>
 
       <!-- Price Statistics Section -->
-      <section aria-labelledby="price-statistics-title" style="margin-bottom: 2rem;">
+      <section aria-labelledby="price-statistics-title" class="stats-section" style="margin-bottom: 2rem;">
         <h2 id="price-statistics-title">Price Statistics</h2>
-        <dl style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-          <div>
-            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">24h High</dt>
-            <dd id="coin-high-24h" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
-          </div>
-          <div>
-            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">24h Low</dt>
-            <dd id="coin-low-24h" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
-          </div>
-          <div>
-            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">All Time High</dt>
-            <dd id="coin-ath" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
-          </div>
-          <div>
-            <dt style="font-weight: 600; font-size: 0.85rem; color: var(--muted-text-color);">All Time Low</dt>
-            <dd id="coin-atl" style="margin: 0.5rem 0 0 0; font-weight: 500;">$0.00</dd>
-          </div>
-        </dl>
+        <div class="stats-grid" role="list">
+          <article class="stat-card" role="listitem">
+            <h3>Current Price</h3>
+            <p id="coin-price-card">$0.00</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>24h High</h3>
+            <p id="coin-high-24h">$0.00</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>24h Low</h3>
+            <p id="coin-low-24h">$0.00</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>24h Price Change</h3>
+            <p id="coin-change-card" class="price-positive">0.00%</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>All-Time High</h3>
+            <p id="coin-ath">$0.00</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>All-Time Low</h3>
+            <p id="coin-atl">$0.00</p>
+          </article>
+        </div>
       </section>
 
       <!-- Description Section -->
