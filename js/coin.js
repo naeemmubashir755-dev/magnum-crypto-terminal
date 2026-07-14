@@ -160,6 +160,56 @@ const setActiveTimeframeButton = (activeButton) => {
   });
 };
 
+const getWatchlist = () => {
+  try {
+    const storedWatchlist = localStorage.getItem('crypto-watchlist');
+    return storedWatchlist ? JSON.parse(storedWatchlist) : [];
+  } catch (error) {
+    console.error('Could not read watchlist:', error);
+    return [];
+  }
+};
+
+const saveWatchlist = (watchlist) => {
+  localStorage.setItem('crypto-watchlist', JSON.stringify(watchlist));
+};
+
+const showWatchlistFeedback = (button) => {
+  if (!button) {
+    return;
+  }
+
+  const originalText = button.textContent;
+  button.textContent = 'Added to Watchlist';
+  button.classList.remove('btn-secondary');
+  button.classList.add('btn-primary');
+
+  window.clearTimeout(button._watchlistTimeout);
+  button._watchlistTimeout = window.setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove('btn-primary');
+    button.classList.add('btn-secondary');
+  }, 1500);
+};
+
+const addCoinToWatchlist = (coinId, button) => {
+  if (!coinId) {
+    return;
+  }
+
+  const watchlist = getWatchlist();
+  if (!watchlist.includes(coinId)) {
+    watchlist.push(coinId);
+    saveWatchlist(watchlist);
+  }
+
+  console.log('Updated watchlist:', watchlist);
+
+  if (button) {
+    showWatchlistFeedback(button);
+  }
+};
+
 const loadHistoryAndRenderChart = async (coinId, days) => {
   const chartContainer = document.getElementById('price-chart');
   if (!chartContainer) {
@@ -247,7 +297,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const watchlistButton = document.getElementById('watchlist-btn');
     if (watchlistButton) {
       watchlistButton.addEventListener('click', () => {
-        addCoinToWatchlist(coinId);
+        addCoinToWatchlist(coinId, watchlistButton);
       });
     }
 
