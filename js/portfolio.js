@@ -2,11 +2,22 @@
   'use strict';
 
   const HOLDINGS_STORAGE_KEY = 'crypto-portfolio-holdings';
+  const allocationColors = [
+    '#38bdf8',
+    '#22c55e',
+    '#f59e0b',
+    '#f97316',
+    '#ec4899',
+    '#14b8a6',
+    '#ef4444',
+    '#a78bfa',
+  ];
   const marketPriceState = {
     marketDataRequest: null,
     coinDetailRequests: new Map(),
     prices: new Map(),
     refreshId: 0,
+    allocationChart: null,
   };
 
   // Static display values until portfolio calculations and data persistence are added.
@@ -76,6 +87,8 @@
     const sign = value > 0 ? '+' : value < 0 ? '-' : '';
     return `${sign}${Math.abs(value).toFixed(2)}%`;
   };
+
+  const formatAllocationPercentage = (value) => `${value.toFixed(2)}%`;
 
   const getProfitLossClass = (value) => {
     if (value > 0) {
@@ -219,6 +232,38 @@
     };
   };
 
+  const calculatePortfolioAllocation = (holdings, prices) => {
+    const assets = new Map();
+
+    for (const holding of holdings) {
+      const currentValue = calculateCurrentValue(holding, prices);
+      const key = getHoldingKey(holding?.coin);
+
+      if (currentValue === null || !key) {
+        return null;
+      }
+
+      const asset = assets.get(key) || {
+        name: String(holding.coin).trim(),
+        value: 0,
+      };
+      asset.value += currentValue;
+      assets.set(key, asset);
+    }
+
+    const totalValue = [...assets.values()].reduce((total, asset) => total + asset.value, 0);
+    if (totalValue <= 0) {
+      return [];
+    }
+
+    return [...assets.values()]
+      .map((asset) => ({
+        ...asset,
+        percentage: (asset.value / totalValue) * 100,
+      }))
+      .sort((left, right) => right.value - left.value);
+  };
+
   const createTableCell = (value, className = '') => {
     const cell = document.createElement('td');
     cell.textContent = value;
@@ -288,6 +333,124 @@
     status.className = `holding-form-status ${type}`.trim();
   };
 
+  const setAllocationStatus = (message) => {
+    const status = document.getElementById('portfolio-allocation-status');
+    if (status) {
+      status.textContent = message;
+    }
+  };
+
+  const destroyAllocationChart = () => {
+    if (marketPriceState.allocationChart) {
+      marketPriceState.allocationChart.destroy();
+      marketPriceState.allocationChart = null;
+    }
+  };
+
+  const renderAllocationLegend = (allocation) => {
+    const legend = document.getElementById('portfolio-allocation-legend');
+    if (!legend) {
+      return;
+    }
+
+    legend.replaceChildren();
+
+    allocation.forEach((asset, index) => {
+      const item = document.createElement('li');
+      const swatch = document.createElement('span');
+      const name = document.createElement('span');
+      const percentage = document.createElement('span');
+
+      swatch.className = 'portfolio-allocation-swatch';
+      swatch.style.backgroundColor = allocationColors[index % allocationColors.length];
+      name.className = 'portfolio-allocation-name';
+      name.textContent = asset.name;
+      percentage.className = 'portfolio-allocation-percentage';
+      percentage.textContent = formatAllocationPercentage(asset.percentage);
+
+      item.append(swatch, name, percentage);
+      legend.appendChild(item);
+    });
+  };
+
+  const createAllocationChartOptions = (allocation) => ({
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            const asset = allocation[context.dataIndex];
+            return `${asset.name}: ${formatCurrentValue(asset.value)} (${formatAllocationPercentage(asset.percentage)})`;
+          },
+        },
+      },
+    },
+  });
+
+  const renderPortfolioAllocation = (holdings, prices) => {
+    const canvas = document.getElementById('portfolio-allocation-chart');
+    if (!canvas) {
+      return;
+    }
+
+    if (!holdings.length) {
+      destroyAllocationChart();
+      renderAllocationLegend([]);
+      setAllocationStatus('Add a holding to view your allocation.');
+      return;
+    }
+
+    const allocation = calculatePortfolioAllocation(holdings, prices);
+    if (!allocation) {
+      destroyAllocationChart();
+      renderAllocationLegend([]);
+      setAllocationStatus('Allocation will appear when current prices are available.');
+      return;
+    }
+
+    if (!allocation.length) {
+      destroyAllocationChart();
+      renderAllocationLegend([]);
+      setAllocationStatus('Allocation is unavailable because the portfolio value is zero.');
+      return;
+    }
+
+    if (typeof window.Chart === 'undefined') {
+      renderAllocationLegend(allocation);
+      setAllocationStatus('The allocation chart could not be loaded.');
+      return;
+    }
+
+    const labels = allocation.map((asset) => `${asset.name} ${formatAllocationPercentage(asset.percentage)}`);
+    const data = allocation.map((asset) => asset.value);
+    const colors = allocation.map((_, index) => allocationColors[index % allocationColors.length]);
+
+    renderAllocationLegend(allocation);
+    setAllocationStatus('');
+
+    if (!marketPriceState.allocationChart) {
+      marketPriceState.allocationChart = new window.Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: colors, borderWidth: 0 }],
+        },
+        options: createAllocationChartOptions(allocation),
+      });
+      return;
+    }
+
+    marketPriceState.allocationChart.data.labels = labels;
+    marketPriceState.allocationChart.data.datasets[0].data = data;
+    marketPriceState.allocationChart.data.datasets[0].backgroundColor = colors;
+    marketPriceState.allocationChart.options = createAllocationChartOptions(allocation);
+    marketPriceState.allocationChart.update();
+  };
+
   const renderOverallProfitLoss = (performance) => {
     const metric = document.querySelector('[data-portfolio-metric="totalProfitLoss"]');
     if (!metric) {
@@ -311,12 +474,14 @@
     if (!holdings.length) {
       marketPriceState.prices = new Map();
       renderHoldings(holdings);
+      renderPortfolioAllocation(holdings, marketPriceState.prices);
       renderPortfolioSummary({ ...portfolioPlaceholder, totalValue: formatCurrentValue(0) });
       renderOverallProfitLoss({ profitLoss: 0, profitLossPercentage: 0 });
       return;
     }
 
     renderHoldings(holdings);
+    renderPortfolioAllocation(holdings, marketPriceState.prices);
     const prices = await fetchCurrentPrices(holdings);
 
     if (refreshId !== marketPriceState.refreshId) {
@@ -325,6 +490,7 @@
 
     marketPriceState.prices = prices;
     renderHoldings(holdings, prices);
+    renderPortfolioAllocation(holdings, prices);
 
     // Recalculate summary performance from the same prices used for every table row.
     const performance = calculatePortfolioPerformance(holdings, prices);

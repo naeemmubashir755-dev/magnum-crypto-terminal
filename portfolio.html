@@ -9,6 +9,7 @@
     <script src="js/app.js" defer></script>
     <script src="js/navigation.js" defer></script>
     <script src="js/api.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/portfolio.js" defer></script>
     <script src="js/utils.js" defer></script>
   </head>
@@ -90,6 +91,17 @@
           <button type="submit" class="btn-primary">Add Holding</button>
         </form>
         <p id="holding-form-status" class="holding-form-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="portfolio-allocation-section" aria-labelledby="portfolio-allocation-title">
+        <h2 id="portfolio-allocation-title">Portfolio Allocation</h2>
+        <div class="portfolio-allocation-layout">
+          <div class="portfolio-allocation-chart">
+            <canvas id="portfolio-allocation-chart" role="img" aria-label="Portfolio allocation chart"></canvas>
+          </div>
+          <ul id="portfolio-allocation-legend" class="portfolio-allocation-legend" aria-label="Portfolio allocation percentages"></ul>
+        </div>
+        <p id="portfolio-allocation-status" class="portfolio-allocation-status" role="status" aria-live="polite"></p>
       </section>
 
       <section aria-labelledby="holdings-title">
