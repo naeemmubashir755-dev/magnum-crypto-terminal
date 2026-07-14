@@ -1,3 +1,18 @@
+const formatHistoryForChart = (history) => {
+  const rawPrices = history?.prices ?? [];
+
+  const labels = rawPrices.map(([timestamp]) =>
+    new Date(timestamp).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    })
+  );
+
+  const prices = rawPrices.map(([, price]) => price);
+
+  return { labels, prices };
+};
+
 const renderPriceChart = (labels, prices) => {
   const chartContainer = document.getElementById('price-chart');
 
@@ -5,67 +20,100 @@ const renderPriceChart = (labels, prices) => {
     return;
   }
 
-  // Clear any existing chart before rendering a new one.
-  chartContainer.innerHTML = '';
   chartContainer.style.height = '320px';
   chartContainer.style.position = 'relative';
 
-  const canvas = document.createElement('canvas');
-  canvas.setAttribute('aria-label', 'Price chart');
-  chartContainer.appendChild(canvas);
-
-  // Destroy the previous chart instance if it exists.
-  if (window.priceChartInstance) {
-    window.priceChartInstance.destroy();
+  let canvas = chartContainer.querySelector('canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-label', 'Price chart');
+    chartContainer.appendChild(canvas);
   }
 
-  window.priceChartInstance = new window.Chart(canvas.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: 'Price (USD)',
-          data: prices,
-          borderColor: '#3b82f6',
-          backgroundColor: 'transparent',
-          borderWidth: 2,
-          pointRadius: 0,
-          fill: false,
-          tension: 0.35,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          enabled: true,
-        },
+  if (!window.priceChartInstance) {
+    window.priceChartInstance = new window.Chart(canvas.getContext('2d'), {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Price (USD)',
+            data: prices,
+            borderColor: '#3b82f6',
+            backgroundColor: 'transparent',
+            borderWidth: 2,
+            pointRadius: 0,
+            fill: false,
+            tension: 0.35,
+          },
+        ],
       },
-      scales: {
-        x: {
-          grid: {
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
             display: false,
           },
+          tooltip: {
+            enabled: true,
+          },
         },
-        y: {
-          ticks: {
-            callback: (value) =>
-              new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                maximumFractionDigits: 0,
-              }).format(value),
+        scales: {
+          x: {
+            grid: {
+              display: false,
+            },
+          },
+          y: {
+            ticks: {
+              callback: (value) =>
+                new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                  maximumFractionDigits: 0,
+                }).format(value),
+            },
           },
         },
       },
-    },
+    });
+
+    return;
+  }
+
+  window.priceChartInstance.data.labels = labels;
+  window.priceChartInstance.data.datasets[0].data = prices;
+  window.priceChartInstance.update();
+};
+
+const setActiveTimeframeButton = (activeButton) => {
+  const buttons = document.querySelectorAll('#chart-section button[data-days]');
+
+  buttons.forEach((button) => {
+    const isActive = button === activeButton;
+
+    button.classList.toggle('active-timeframe', isActive);
+    button.style.fontWeight = isActive ? '700' : '500';
+    button.style.backgroundColor = isActive ? '#3b82f6' : '';
+    button.style.color = isActive ? '#fff' : '';
+    button.style.borderColor = isActive ? '#3b82f6' : '';
   });
+};
+
+const loadHistoryAndRenderChart = async (coinId, days) => {
+  try {
+    const history = await window.fetchCoinHistory(coinId, days);
+    console.log('Coin history response:', history);
+
+    const { labels, prices } = formatHistoryForChart(history);
+    console.log('Labels:', labels);
+    console.log('Prices:', prices);
+
+    renderPriceChart(labels, prices);
+  } catch (historyError) {
+    console.error('Could not load coin history:', historyError);
+  }
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -86,21 +134,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    // Helper to transform historical price data into chart-friendly arrays.
-    const formatHistoryForChart = (history) => {
-      const rawPrices = history?.prices ?? [];
-
-      const labels = rawPrices.map(([timestamp]) =>
-        new Date(timestamp).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        })
-      );
-
-      const prices = rawPrices.map(([, price]) => price);
-
-      return { labels, prices };
-    };
+    // Connect the timeframe buttons so they refresh the existing chart in place.
+    const timeframeButtons = document.querySelectorAll('#chart-section button[data-days]');
+    timeframeButtons.forEach((button) => {
+      button.addEventListener('click', async () => {
+        const days = button.getAttribute('data-days');
+        setActiveTimeframeButton(button);
+        await loadHistoryAndRenderChart(coinId, days);
+      });
+    });
 
     // Fetch the detailed coin information from the shared API helper.
     const coin = await window.fetchCoinDetails(coinId);
@@ -108,20 +150,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Log the full response for debugging purposes.
     console.log('Coin details response:', coin);
 
-    // Fetch 30 days of historical price data after the coin details load.
-    try {
-      const history = await window.fetchCoinHistory(coinId, 30);
-      console.log('Coin history response:', history);
-
-      const { labels, prices } = formatHistoryForChart(history);
-      console.log('Labels:', labels);
-      console.log('Prices:', prices);
-
-      // Render the prepared chart data once the historical values are available.
-      renderPriceChart(labels, prices);
-    } catch (historyError) {
-      console.error('Could not load coin history:', historyError);
+    // Load the default 30-day history and render the initial chart.
+    const defaultButton = document.querySelector('#chart-section button[data-days="30"]');
+    if (defaultButton) {
+      setActiveTimeframeButton(defaultButton);
     }
+    await loadHistoryAndRenderChart(coinId, 30);
 
     // Format numbers for display.
     const formatCurrency = (value) =>
