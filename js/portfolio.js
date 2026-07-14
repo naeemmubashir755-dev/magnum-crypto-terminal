@@ -33,10 +33,71 @@
     }
   };
 
+  const saveHoldings = (holdings) => {
+    localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
+  };
+
   const saveHolding = (holding) => {
     const holdings = getSavedHoldings();
     holdings.push(holding);
-    localStorage.setItem(HOLDINGS_STORAGE_KEY, JSON.stringify(holdings));
+    saveHoldings(holdings);
+  };
+
+  const formatBuyPrice = (value) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+
+  const createTableCell = (value) => {
+    const cell = document.createElement('td');
+    cell.textContent = value;
+    return cell;
+  };
+
+  const renderHoldings = () => {
+    const tableBody = document.getElementById('holdings-table-body');
+    if (!tableBody) {
+      return;
+    }
+
+    const holdings = getSavedHoldings();
+    tableBody.replaceChildren();
+
+    if (!holdings.length) {
+      const row = document.createElement('tr');
+      const cell = createTableCell('No holdings have been added yet.');
+      cell.colSpan = 5;
+      row.appendChild(cell);
+      tableBody.appendChild(row);
+      return;
+    }
+
+    holdings.forEach((holding, index) => {
+      const row = document.createElement('tr');
+      const savedHolding = holding && typeof holding === 'object' ? holding : {};
+      const quantity = Number(savedHolding.quantity);
+      const buyPrice = Number(savedHolding.buyPrice);
+
+      row.append(
+        createTableCell(savedHolding.coin || 'Unknown coin'),
+        createTableCell(Number.isFinite(quantity) ? String(quantity) : '--'),
+        createTableCell(Number.isFinite(buyPrice) ? formatBuyPrice(buyPrice) : '--'),
+        createTableCell(savedHolding.purchaseDate || '--')
+      );
+
+      const actionCell = document.createElement('td');
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'btn-danger';
+      deleteButton.dataset.holdingIndex = String(index);
+      deleteButton.textContent = 'Delete';
+      actionCell.appendChild(deleteButton);
+      row.appendChild(actionCell);
+      tableBody.appendChild(row);
+    });
   };
 
   const setFormStatus = (message, type = '') => {
@@ -105,9 +166,34 @@
       saveHolding(createHoldingFromForm(form));
       form.reset();
       setFormStatus('Holding saved.', 'success');
+      renderHoldings();
     } catch (error) {
       console.error('Could not save portfolio holding:', error);
       setFormStatus('We could not save this holding. Please try again.', 'error');
+    }
+  };
+
+  const handleHoldingDeletion = (event) => {
+    const deleteButton = event.target.closest('button[data-holding-index]');
+    if (!deleteButton) {
+      return;
+    }
+
+    const holdingIndex = Number.parseInt(deleteButton.dataset.holdingIndex, 10);
+    const holdings = getSavedHoldings();
+
+    if (!Number.isInteger(holdingIndex) || holdingIndex < 0 || holdingIndex >= holdings.length) {
+      return;
+    }
+
+    try {
+      holdings.splice(holdingIndex, 1);
+      saveHoldings(holdings);
+      renderHoldings();
+      setFormStatus('Holding deleted.', 'success');
+    } catch (error) {
+      console.error('Could not delete portfolio holding:', error);
+      setFormStatus('We could not delete this holding. Please try again.', 'error');
     }
   };
 
@@ -115,12 +201,14 @@
     renderPortfolioSummary(portfolioPlaceholder);
 
     const holdingForm = document.getElementById('add-holding-form');
-    if (!holdingForm) {
-      return;
+    if (holdingForm) {
+      const purchaseDate = holdingForm.elements.purchaseDate;
+      purchaseDate.max = getToday();
+      holdingForm.addEventListener('submit', handleHoldingSubmission);
     }
 
-    const purchaseDate = holdingForm.elements.purchaseDate;
-    purchaseDate.max = getToday();
-    holdingForm.addEventListener('submit', handleHoldingSubmission);
+    const holdingsTableBody = document.getElementById('holdings-table-body');
+    holdingsTableBody?.addEventListener('click', handleHoldingDeletion);
+    renderHoldings();
   });
 })();
