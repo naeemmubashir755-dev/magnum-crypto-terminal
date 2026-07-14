@@ -64,7 +64,24 @@
 
       <section aria-labelledby="watchlist-list-title">
         <h2 id="watchlist-list-title">Your Watchlist</h2>
-        <ul id="watchlist-list" class="watchlist-list"></ul>
+        <div id="watchlist-status" class="table-status" aria-live="polite">Loading watchlist...</div>
+        <table id="watchlist-table" class="watchlist-table">
+          <thead>
+            <tr>
+              <th scope="col">Logo</th>
+              <th scope="col">Coin Name</th>
+              <th scope="col">Symbol</th>
+              <th scope="col">Current Price (USD)</th>
+              <th scope="col">24h Change (%)</th>
+              <th scope="col">Market Cap</th>
+            </tr>
+          </thead>
+          <tbody id="watchlist-body">
+            <tr>
+              <td colspan="6">Loading watchlist...</td>
+            </tr>
+          </tbody>
+        </table>
       </section>
     </main>
 

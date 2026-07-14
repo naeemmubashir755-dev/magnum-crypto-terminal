@@ -10,24 +10,114 @@ const getWatchlist = () => {
   }
 };
 
-const renderWatchlist = () => {
-  const list = document.getElementById('watchlist-list');
-  if (!list) {
+const formatCurrency = (value) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 2,
+  }).format(value || 0);
+
+const formatPercentage = (value) => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return '--';
+  }
+
+  const sign = value >= 0 ? '+' : '';
+  return `${sign}${value.toFixed(2)}%`;
+};
+
+const formatMarketCap = (value) => formatCurrency(value || 0);
+
+const renderLoadingState = () => {
+  const body = document.getElementById('watchlist-body');
+  const status = document.getElementById('watchlist-status');
+
+  if (body) {
+    body.innerHTML = '<tr><td colspan="6"><div class="table-status"><div class="spinner"></div><span>Loading watchlist...</span></div></td></tr>';
+  }
+
+  if (status) {
+    status.textContent = 'Loading watchlist...';
+  }
+};
+
+const renderEmptyState = () => {
+  const body = document.getElementById('watchlist-body');
+  const status = document.getElementById('watchlist-status');
+
+  if (body) {
+    body.innerHTML = '<tr><td colspan="6">Your watchlist is empty.</td></tr>';
+  }
+
+  if (status) {
+    status.textContent = 'Your watchlist is empty.';
+  }
+};
+
+const renderWatchlistRows = (coins) => {
+  const body = document.getElementById('watchlist-body');
+  const status = document.getElementById('watchlist-status');
+
+  if (!body) {
     return;
   }
 
-  const watchlist = getWatchlist();
-
-  if (!watchlist.length) {
-    list.innerHTML = '<li class="watchlist-empty">No coins saved yet.</li>';
+  if (!coins.length) {
+    renderEmptyState();
     return;
   }
 
-  list.innerHTML = watchlist
-    .map((coinId) => `<li>${coinId}</li>`)
+  if (status) {
+    status.textContent = 'Showing your saved cryptocurrencies.';
+  }
+
+  body.innerHTML = coins
+    .map(
+      (coin) => `
+        <tr>
+          <td><img src="${coin.image || ''}" alt="${coin.name || 'Coin'} logo" class="market-logo" /></td>
+          <td>${coin.name || 'Unknown Coin'}</td>
+          <td>${coin.symbol?.toUpperCase() || 'N/A'}</td>
+          <td>${formatCurrency(coin.current_price)}</td>
+          <td class="${coin.price_change_percentage_24h >= 0 ? 'price-positive' : 'price-negative'}">${formatPercentage(coin.price_change_percentage_24h)}</td>
+          <td>${formatMarketCap(coin.market_cap)}</td>
+        </tr>
+      `
+    )
     .join('');
 };
 
+const loadWatchlistData = async () => {
+  const watchlist = getWatchlist();
+
+  if (!watchlist.length) {
+    renderEmptyState();
+    return;
+  }
+
+  renderLoadingState();
+
+  const uniqueCoinIds = [...new Set(watchlist)];
+
+  try {
+    const marketData = await Promise.all(
+      uniqueCoinIds.map((coinId) =>
+        window.fetchMarketData(100).then((marketItems) => marketItems.find((item) => item.id === coinId) || null)
+      )
+    );
+
+    const coins = marketData.filter(Boolean);
+    renderWatchlistRows(coins);
+  } catch (error) {
+    console.error('Could not load watchlist data:', error);
+
+    const body = document.getElementById('watchlist-body');
+    if (body) {
+      body.innerHTML = '<tr><td colspan="6">We could not load your watchlist right now.</td></tr>';
+    }
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-  renderWatchlist();
+  loadWatchlistData();
 });
