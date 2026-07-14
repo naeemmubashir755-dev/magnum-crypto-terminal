@@ -185,14 +185,34 @@ table tbody tr:hover {
   font-weight: 600;
 }
 
+.portfolio-summary {
+  margin-top: 2rem;
+}
+
+.portfolio-summary h2 {
+  margin: 0 0 1rem;
+}
+
+.portfolio-stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 @media (max-width: 768px) {
   .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .portfolio-stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 480px) {
   .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .portfolio-stats-grid {
     grid-template-columns: 1fr;
   }
 }

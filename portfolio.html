@@ -9,6 +9,7 @@
     <script src="js/app.js" defer></script>
     <script src="js/navigation.js" defer></script>
     <script src="js/api.js" defer></script>
+    <script src="js/portfolio.js" defer></script>
     <script src="js/utils.js" defer></script>
   </head>
   <body>
@@ -41,27 +42,30 @@
 
     <main>
       <section aria-labelledby="portfolio-title">
-        <h1 id="portfolio-title">Portfolio</h1>
+        <h1 id="portfolio-title">Portfolio Dashboard</h1>
         <p>Track your holdings and monitor portfolio performance.</p>
       </section>
 
-      <section aria-label="Portfolio summary cards">
-        <article>
-          <h2>Total Balance</h2>
-          <p>$125,400</p>
-        </article>
-        <article>
-          <h2>Total Profit/Loss</h2>
-          <p>+$12,300</p>
-        </article>
-        <article>
-          <h2>Best Performer</h2>
-          <p>Solana</p>
-        </article>
-        <article>
-          <h2>Worst Performer</h2>
-          <p>Dogecoin</p>
-        </article>
+      <section class="portfolio-summary stats-section" aria-labelledby="portfolio-summary-title">
+        <h2 id="portfolio-summary-title">Portfolio Summary</h2>
+        <div class="stats-grid portfolio-stats-grid">
+          <article class="stat-card" aria-labelledby="portfolio-value-label">
+            <h3 id="portfolio-value-label">Total Portfolio Value</h3>
+            <p id="total-portfolio-value" data-portfolio-metric="totalValue">$125,400.00</p>
+          </article>
+          <article class="stat-card" aria-labelledby="today-profit-loss-label">
+            <h3 id="today-profit-loss-label">Today's Profit/Loss</h3>
+            <p id="today-profit-loss" data-portfolio-metric="todayProfitLoss" class="price-positive">+$1,250.00</p>
+          </article>
+          <article class="stat-card" aria-labelledby="total-profit-loss-label">
+            <h3 id="total-profit-loss-label">Total Profit/Loss</h3>
+            <p id="total-profit-loss" data-portfolio-metric="totalProfitLoss" class="price-positive">+$12,300.00</p>
+          </article>
+          <article class="stat-card" aria-labelledby="asset-count-label">
+            <h3 id="asset-count-label">Number of Assets</h3>
+            <p id="asset-count" data-portfolio-metric="assetCount">3</p>
+          </article>
+        </div>
       </section>
 
       <section aria-labelledby="holdings-title">
