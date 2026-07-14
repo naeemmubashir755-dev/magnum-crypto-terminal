@@ -59,6 +59,36 @@
 
   const formatCurrentValue = (value) => formatBuyPrice(value);
 
+  const formatSignedCurrency = (value) => {
+    if (!Number.isFinite(value)) {
+      return '--';
+    }
+
+    const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+    return `${sign}${formatBuyPrice(Math.abs(value))}`;
+  };
+
+  const formatProfitLossPercentage = (value) => {
+    if (!Number.isFinite(value)) {
+      return '--';
+    }
+
+    const sign = value > 0 ? '+' : value < 0 ? '-' : '';
+    return `${sign}${Math.abs(value).toFixed(2)}%`;
+  };
+
+  const getProfitLossClass = (value) => {
+    if (value > 0) {
+      return 'price-positive';
+    }
+
+    if (value < 0) {
+      return 'price-negative';
+    }
+
+    return '';
+  };
+
   const getHoldingKey = (coin) => String(coin || '').trim().toLowerCase();
 
   const getCoinIdentifier = (coin) => getHoldingKey(coin).replace(/\s+/g, '-');
@@ -146,24 +176,55 @@
     return quantity * price;
   };
 
-  const calculateTotalPortfolioValue = (holdings, prices) => {
-    let total = 0;
+  const calculateHoldingPerformance = (holding, prices) => {
+    const quantity = Number(holding?.quantity);
+    const buyPrice = Number(holding?.buyPrice);
+    const currentValue = calculateCurrentValue(holding, prices);
+
+    if (!Number.isFinite(quantity) || !Number.isFinite(buyPrice) || currentValue === null) {
+      return null;
+    }
+
+    const costBasis = quantity * buyPrice;
+    const profitLoss = currentValue - costBasis;
+
+    return {
+      currentValue,
+      costBasis,
+      profitLoss,
+      profitLossPercentage: costBasis > 0 ? (profitLoss / costBasis) * 100 : null,
+    };
+  };
+
+  const calculatePortfolioPerformance = (holdings, prices) => {
+    let totalValue = 0;
+    let totalCostBasis = 0;
 
     for (const holding of holdings) {
-      const currentValue = calculateCurrentValue(holding, prices);
-      if (currentValue === null) {
+      const performance = calculateHoldingPerformance(holding, prices);
+      if (!performance) {
         return null;
       }
 
-      total += currentValue;
+      totalValue += performance.currentValue;
+      totalCostBasis += performance.costBasis;
     }
 
-    return total;
+    const profitLoss = totalValue - totalCostBasis;
+
+    return {
+      totalValue,
+      profitLoss,
+      profitLossPercentage: totalCostBasis > 0 ? (profitLoss / totalCostBasis) * 100 : null,
+    };
   };
 
-  const createTableCell = (value) => {
+  const createTableCell = (value, className = '') => {
     const cell = document.createElement('td');
     cell.textContent = value;
+    if (className) {
+      cell.className = className;
+    }
     return cell;
   };
 
@@ -178,7 +239,7 @@
     if (!holdings.length) {
       const row = document.createElement('tr');
       const cell = createTableCell('No holdings have been added yet.');
-      cell.colSpan = 6;
+      cell.colSpan = 7;
       row.appendChild(cell);
       tableBody.appendChild(row);
       return;
@@ -189,14 +250,20 @@
       const savedHolding = holding && typeof holding === 'object' ? holding : {};
       const quantity = Number(savedHolding.quantity);
       const buyPrice = Number(savedHolding.buyPrice);
-      const currentValue = calculateCurrentValue(savedHolding, prices);
+      const performance = calculateHoldingPerformance(savedHolding, prices);
+      const profitLoss = performance?.profitLoss;
+      const profitLossPercentage = performance?.profitLossPercentage;
 
       row.append(
         createTableCell(savedHolding.coin || 'Unknown coin'),
         createTableCell(Number.isFinite(quantity) ? String(quantity) : '--'),
         createTableCell(Number.isFinite(buyPrice) ? formatBuyPrice(buyPrice) : '--'),
         createTableCell(savedHolding.purchaseDate || '--'),
-        createTableCell(currentValue === null ? '--' : formatCurrentValue(currentValue))
+        createTableCell(performance ? formatCurrentValue(performance.currentValue) : '--'),
+        createTableCell(
+          performance ? `${formatSignedCurrency(profitLoss)} (${formatProfitLossPercentage(profitLossPercentage)})` : '--',
+          getProfitLossClass(profitLoss)
+        )
       );
 
       const actionCell = document.createElement('td');
@@ -221,6 +288,22 @@
     status.className = `holding-form-status ${type}`.trim();
   };
 
+  const renderOverallProfitLoss = (performance) => {
+    const metric = document.querySelector('[data-portfolio-metric="totalProfitLoss"]');
+    if (!metric) {
+      return;
+    }
+
+    const profitLoss = performance?.profitLoss;
+    const profitLossPercentage = performance?.profitLossPercentage;
+
+    metric.textContent = performance
+      ? `${formatSignedCurrency(profitLoss)} (${formatProfitLossPercentage(profitLossPercentage)})`
+      : '--';
+    metric.classList.remove('price-positive', 'price-negative');
+    metric.classList.add(getProfitLossClass(profitLoss));
+  };
+
   const refreshPortfolioValues = async () => {
     const refreshId = ++marketPriceState.refreshId;
     const holdings = getSavedHoldings();
@@ -229,6 +312,7 @@
       marketPriceState.prices = new Map();
       renderHoldings(holdings);
       renderPortfolioSummary({ ...portfolioPlaceholder, totalValue: formatCurrentValue(0) });
+      renderOverallProfitLoss({ profitLoss: 0, profitLossPercentage: 0 });
       return;
     }
 
@@ -242,11 +326,13 @@
     marketPriceState.prices = prices;
     renderHoldings(holdings, prices);
 
-    const totalValue = calculateTotalPortfolioValue(holdings, prices);
+    // Recalculate summary performance from the same prices used for every table row.
+    const performance = calculatePortfolioPerformance(holdings, prices);
     renderPortfolioSummary({
       ...portfolioPlaceholder,
-      totalValue: totalValue === null ? '--' : formatCurrentValue(totalValue),
+      totalValue: performance ? formatCurrentValue(performance.totalValue) : '--',
     });
+    renderOverallProfitLoss(performance);
   };
 
   const getToday = () => {
