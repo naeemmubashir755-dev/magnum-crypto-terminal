@@ -54,6 +54,27 @@ const renderEmptyState = () => {
   }
 };
 
+const saveWatchlist = (watchlist) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(watchlist));
+};
+
+const removeCoinFromWatchlist = (coinId) => {
+  const watchlist = getWatchlist().filter((savedId) => savedId !== coinId);
+  saveWatchlist(watchlist);
+
+  const body = document.getElementById('watchlist-body');
+  if (body) {
+    const row = body.querySelector(`tr[data-coin-id="${coinId}"]`);
+    if (row) {
+      row.remove();
+    }
+  }
+
+  if (!watchlist.length) {
+    renderEmptyState();
+  }
+};
+
 const renderWatchlistRows = (coins) => {
   const body = document.getElementById('watchlist-body');
   const status = document.getElementById('watchlist-status');
@@ -74,13 +95,14 @@ const renderWatchlistRows = (coins) => {
   body.innerHTML = coins
     .map(
       (coin) => `
-        <tr>
+        <tr data-coin-id="${coin.id}">
           <td><img src="${coin.image || ''}" alt="${coin.name || 'Coin'} logo" class="market-logo" /></td>
           <td>${coin.name || 'Unknown Coin'}</td>
           <td>${coin.symbol?.toUpperCase() || 'N/A'}</td>
           <td>${formatCurrency(coin.current_price)}</td>
           <td class="${coin.price_change_percentage_24h >= 0 ? 'price-positive' : 'price-negative'}">${formatPercentage(coin.price_change_percentage_24h)}</td>
           <td>${formatMarketCap(coin.market_cap)}</td>
+          <td><button type="button" class="btn-danger" data-remove-coin="${coin.id}">Remove</button></td>
         </tr>
       `
     )
@@ -119,5 +141,19 @@ const loadWatchlistData = async () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  const body = document.getElementById('watchlist-body');
+
+  body?.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-remove-coin]');
+    if (!button) {
+      return;
+    }
+
+    const coinId = button.getAttribute('data-remove-coin');
+    if (coinId) {
+      removeCoinFromWatchlist(coinId);
+    }
+  });
+
   loadWatchlistData();
 });
