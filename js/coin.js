@@ -1,3 +1,73 @@
+const renderPriceChart = (labels, prices) => {
+  const chartContainer = document.getElementById('price-chart');
+
+  if (!chartContainer || !labels?.length || !prices?.length || typeof window.Chart === 'undefined') {
+    return;
+  }
+
+  // Clear any existing chart before rendering a new one.
+  chartContainer.innerHTML = '';
+  chartContainer.style.height = '320px';
+  chartContainer.style.position = 'relative';
+
+  const canvas = document.createElement('canvas');
+  canvas.setAttribute('aria-label', 'Price chart');
+  chartContainer.appendChild(canvas);
+
+  // Destroy the previous chart instance if it exists.
+  if (window.priceChartInstance) {
+    window.priceChartInstance.destroy();
+  }
+
+  window.priceChartInstance = new window.Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Price (USD)',
+          data: prices,
+          borderColor: '#3b82f6',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          fill: false,
+          tension: 0.35,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false,
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false,
+          },
+        },
+        y: {
+          ticks: {
+            callback: (value) =>
+              new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 0,
+              }).format(value),
+          },
+        },
+      },
+    },
+  });
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
   // Read the id from the current URL.
   const params = new URLSearchParams(window.location.search);
@@ -46,6 +116,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const { labels, prices } = formatHistoryForChart(history);
       console.log('Labels:', labels);
       console.log('Prices:', prices);
+
+      // Render the prepared chart data once the historical values are available.
+      renderPriceChart(labels, prices);
     } catch (historyError) {
       console.error('Could not load coin history:', historyError);
     }
