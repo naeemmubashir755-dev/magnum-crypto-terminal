@@ -89,10 +89,40 @@ const filterCoinsByQuery = (coins, query) => {
   });
 };
 
-const renderWatchlistRows = (coins, query = '') => {
+const sortCoins = (coins, sortKey, direction) => {
+  const sortedCoins = [...coins];
+
+  sortedCoins.sort((a, b) => {
+    let left = a[sortKey];
+    let right = b[sortKey];
+
+    if (sortKey === 'name') {
+      left = (left || '').toLowerCase();
+      right = (right || '').toLowerCase();
+    } else {
+      left = typeof left === 'number' ? left : Number(left) || 0;
+      right = typeof right === 'number' ? right : Number(right) || 0;
+    }
+
+    if (left < right) {
+      return direction === 'asc' ? -1 : 1;
+    }
+
+    if (left > right) {
+      return direction === 'asc' ? 1 : -1;
+    }
+
+    return 0;
+  });
+
+  return sortedCoins;
+};
+
+const renderWatchlistRows = (coins, query = '', sortKey = 'name', direction = 'asc') => {
   const body = document.getElementById('watchlist-body');
   const status = document.getElementById('watchlist-status');
   const filteredCoins = filterCoinsByQuery(coins, query);
+  const sortedCoins = sortCoins(filteredCoins, sortKey, direction);
 
   if (!body) {
     return;
@@ -110,7 +140,7 @@ const renderWatchlistRows = (coins, query = '') => {
     status.textContent = 'Showing your saved cryptocurrencies.';
   }
 
-  body.innerHTML = filteredCoins
+  body.innerHTML = sortedCoins
     .map(
       (coin) => `
         <tr data-coin-id="${coin.id}">
@@ -125,6 +155,33 @@ const renderWatchlistRows = (coins, query = '') => {
       `
     )
     .join('');
+};
+
+const attachSorting = (coins) => {
+  const headers = document.querySelectorAll('#watchlist-table thead th');
+  let currentSortKey = 'name';
+  let currentDirection = 'asc';
+
+  headers.forEach((header) => {
+    const sortKey = header.dataset.sortKey;
+    if (!sortKey) {
+      return;
+    }
+
+    header.style.cursor = 'pointer';
+    header.addEventListener('click', () => {
+      if (currentSortKey === sortKey) {
+        currentDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        currentSortKey = sortKey;
+        currentDirection = 'asc';
+      }
+
+      const searchInput = document.getElementById('watchlist-search');
+      const query = searchInput?.value || '';
+      renderWatchlistRows(coins, query, currentSortKey, currentDirection);
+    });
+  });
 };
 
 const loadWatchlistData = async () => {
@@ -148,6 +205,7 @@ const loadWatchlistData = async () => {
 
     const coins = marketData.filter(Boolean);
     renderWatchlistRows(coins);
+    attachSorting(coins);
 
     const searchInput = document.getElementById('watchlist-search');
     if (searchInput) {
