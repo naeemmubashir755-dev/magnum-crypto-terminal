@@ -361,6 +361,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     const atl = document.getElementById('coin-atl');
     if (atl) atl.textContent = formatCurrency(coin.market_data?.atl?.usd);
 
+    // Populate price performance metrics from the existing coin details response.
+    const performanceData = [
+      { id: 'performance-24h', value: coin.market_data?.price_change_percentage_24h },
+      { id: 'performance-7d', value: coin.market_data?.price_change_percentage_7d },
+      { id: 'performance-14d', value: coin.market_data?.price_change_percentage_14d },
+      { id: 'performance-30d', value: coin.market_data?.price_change_percentage_30d },
+      { id: 'performance-60d', value: coin.market_data?.price_change_percentage_60d },
+      { id: 'performance-200d', value: coin.market_data?.price_change_percentage_200d },
+      { id: 'performance-1y', value: coin.market_data?.price_change_percentage_1y },
+    ];
+
+    performanceData.forEach(({ id, value }) => {
+      const element = document.getElementById(id);
+      if (!element) return;
+
+      if (typeof value === 'number' && !Number.isNaN(value)) {
+        const sign = value >= 0 ? '+' : '';
+        element.textContent = `${sign}${value.toFixed(2)}%`;
+        element.classList.remove('price-positive', 'price-negative');
+        element.classList.add(value >= 0 ? 'price-positive' : 'price-negative');
+      } else {
+        element.textContent = '--';
+        element.classList.remove('price-positive', 'price-negative');
+      }
+    });
+
     // Populate description.
     const description = document.getElementById('coin-description');
     if (description) description.textContent = coin.description?.en || 'No description available.';
