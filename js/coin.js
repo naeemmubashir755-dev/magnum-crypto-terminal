@@ -16,6 +16,22 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
+    // Helper to transform historical price data into chart-friendly arrays.
+    const formatHistoryForChart = (history) => {
+      const rawPrices = history?.prices ?? [];
+
+      const labels = rawPrices.map(([timestamp]) =>
+        new Date(timestamp).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        })
+      );
+
+      const prices = rawPrices.map(([, price]) => price);
+
+      return { labels, prices };
+    };
+
     // Fetch the detailed coin information from the shared API helper.
     const coin = await window.fetchCoinDetails(coinId);
 
@@ -26,6 +42,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const history = await window.fetchCoinHistory(coinId, 30);
       console.log('Coin history response:', history);
+
+      const { labels, prices } = formatHistoryForChart(history);
+      console.log('Labels:', labels);
+      console.log('Prices:', prices);
     } catch (historyError) {
       console.error('Could not load coin history:', historyError);
     }
