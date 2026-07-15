@@ -1,5 +1,6 @@
 const { coinGeckoBaseUrl } = require('../config/env');
 
+// The MarketService is the only backend layer that communicates with CoinGecko.
 const requestCoinGecko = async (path, query = {}) => {
   const url = new URL(path, coinGeckoBaseUrl);
   Object.entries(query).forEach(([key, value]) => {
