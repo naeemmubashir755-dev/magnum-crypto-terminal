@@ -72,6 +72,32 @@
     return response.json();
   }
 
+  // Fetch aggregate cryptocurrency market statistics for the dashboard overview.
+  async function fetchGlobalMarketData() {
+    const response = await fetch(`${BASE_URL}/global`, {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error('We could not load the global market overview right now.');
+    }
+
+    return response.json();
+  }
+
+  // Alternative.me provides a free, public crypto Fear & Greed index.
+  async function fetchFearGreedIndex() {
+    const response = await fetch('https://api.alternative.me/fng/?limit=1&format=json', {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error('The Fear & Greed index is currently unavailable.');
+    }
+
+    return response.json();
+  }
+
   // Fetch detailed information for one cryptocurrency by its CoinGecko id.
   async function fetchCoinDetails(id) {
     const response = await fetch(`${BASE_URL}/coins/${id}`, {
@@ -110,6 +136,8 @@
   window.fetchTrendingCoins = fetchTrendingCoins;
   window.fetchRecentlyAddedCoins = fetchRecentlyAddedCoins;
   window.fetchMarketDataForIds = fetchMarketDataForIds;
+  window.fetchGlobalMarketData = fetchGlobalMarketData;
+  window.fetchFearGreedIndex = fetchFearGreedIndex;
   window.fetchCoinDetails = fetchCoinDetails;
   window.fetchCoinHistory = fetchCoinHistory;
 })();

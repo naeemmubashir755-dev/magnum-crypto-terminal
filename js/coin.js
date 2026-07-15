@@ -45,8 +45,8 @@ const calculateRsi = (prices, period = 14) => {
 };
 
 const getRsiState = (rsi) => {
-  if (rsi >= 70) return { label: 'Overbought', className: 'price-negative' };
-  if (rsi <= 30) return { label: 'Oversold', className: 'price-positive' };
+  if (rsi > 70) return { label: 'Overbought', className: 'price-negative' };
+  if (rsi < 30) return { label: 'Oversold', className: 'price-positive' };
   return { label: 'Neutral', className: '' };
 };
 

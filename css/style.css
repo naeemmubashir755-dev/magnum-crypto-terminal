@@ -667,6 +667,25 @@ textarea:focus {
   margin: 2rem 0;
 }
 
+.global-market-section {
+  margin-bottom: 2rem;
+}
+
+.global-market-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.global-market-grid small {
+  color: var(--muted-text-color);
+}
+
+.global-market-grid small a {
+  color: inherit;
+}
+
 .market-movers-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -785,6 +804,10 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 
+  .global-market-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .discovery-grid {
     grid-template-columns: 1fr;
   }
@@ -797,6 +820,10 @@ textarea:focus {
 
   .heatmap-tile {
     grid-column: span 1 !important;
+  }
+
+  .global-market-grid {
+    grid-template-columns: 1fr;
   }
 }
 

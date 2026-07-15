@@ -9,6 +9,7 @@
     <script src="js/app.js" defer></script>
     <script src="js/navigation.js" defer></script>
     <script src="js/api.js" defer></script>
+    <script src="js/global-market.js" defer></script>
     <script src="js/market-movers.js" defer></script>
     <script src="js/utils.js" defer></script>
   </head>
@@ -52,9 +53,21 @@
         <p>Track prices, manage your portfolio, and monitor your watchlist from a single dashboard.</p>
       </section>
 
-      <section aria-labelledby="market-overview-title">
-        <h2 id="market-overview-title">Market Overview</h2>
-        <p>BTC: $68,420 | ETH: $3,760 | SOL: $180</p>
+      <section aria-labelledby="market-overview-title" class="global-market-section">
+        <h2 id="market-overview-title">Global Market Overview</h2>
+        <div id="global-market-status" class="table-status" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Loading global market data...</span>
+        </div>
+        <div id="global-market-grid" class="global-market-grid" hidden>
+          <article class="stat-card"><h3>Global Market Cap</h3><p id="global-market-cap">--</p></article>
+          <article class="stat-card"><h3>24h Volume</h3><p id="global-volume">--</p></article>
+          <article class="stat-card"><h3>BTC Dominance</h3><p id="btc-dominance">--</p></article>
+          <article class="stat-card"><h3>ETH Dominance</h3><p id="eth-dominance">--</p></article>
+          <article class="stat-card"><h3>Fear &amp; Greed Index</h3><p id="fear-greed-index">Loading...</p><small>Source: <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">Alternative.me</a></small></article>
+          <article class="stat-card"><h3>Active Cryptocurrencies</h3><p id="active-cryptocurrencies">--</p></article>
+          <article class="stat-card"><h3>Active Exchanges</h3><p id="active-exchanges">--</p></article>
+        </div>
       </section>
 
       <section aria-labelledby="market-movers-title" class="market-movers-section">
@@ -116,11 +129,6 @@
           <h3>Market Update</h3>
           <p>Bitcoin remains above the key resistance level after strong weekly momentum.</p>
         </article>
-      </section>
-
-      <section aria-labelledby="fear-greed-title">
-        <h2 id="fear-greed-title">Fear &amp; Greed Index</h2>
-        <p>Current value: 72 (Greed)</p>
       </section>
 
       <section aria-labelledby="portfolio-summary-title">
