@@ -579,6 +579,13 @@ const getMarketTrendLabel = (prices) => {
   return `Sideways (${change >= 0 ? '+' : ''}${change.toFixed(2)}%)`;
 };
 
+const getMarketStructure = (currentPrice, ema20, ema50) => {
+  if (![currentPrice, ema20, ema50].every(Number.isFinite)) return 'mixed';
+  if (currentPrice > ema20 && currentPrice > ema50 && ema20 > ema50) return 'bullish';
+  if (currentPrice < ema20 && currentPrice < ema50 && ema20 < ema50) return 'bearish';
+  return 'mixed';
+};
+
 // Render the reusable aiSignals.js result and supporting technical context in the analysis panel.
 const updateAiTradingAnalysis = (prices, volumes) => {
   const elements = {
@@ -587,6 +594,7 @@ const updateAiTradingAnalysis = (prices, volumes) => {
     trend: document.getElementById('ai-analysis-trend'),
     momentum: document.getElementById('ai-analysis-momentum'),
     risk: document.getElementById('ai-analysis-risk'),
+    riskExplanation: document.getElementById('ai-analysis-risk-explanation'),
     reasoning: document.getElementById('ai-analysis-reasoning'),
   };
   if (!Object.values(elements).every(Boolean)) return;
@@ -599,6 +607,7 @@ const updateAiTradingAnalysis = (prices, volumes) => {
     elements.trend.textContent = 'Unavailable';
     elements.momentum.textContent = 'Unavailable';
     elements.risk.textContent = 'Unavailable';
+    elements.riskExplanation.textContent = 'Risk engine data is unavailable.';
     elements.reasoning.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'Insufficient indicator data.' }));
     return;
   }
@@ -633,7 +642,17 @@ const updateAiTradingAnalysis = (prices, volumes) => {
   elements.momentum.textContent = Number.isFinite(macdPair.latest?.line) && Number.isFinite(macdPair.latest?.signal)
     ? (macdPair.latest.line > macdPair.latest.signal ? 'Bullish' : 'Bearish')
     : 'Unavailable';
-  elements.risk.textContent = Number.isFinite(rsi) && (rsi > 70 || rsi < 30) ? 'Elevated' : 'Moderate';
+  const trendLabel = getMarketTrendLabel(validPrices);
+  const marketStructure = getMarketStructure(validPrices.at(-1), ema20, ema50);
+  const riskAssessment = window.assessMarketRisk?.({
+    rsi,
+    volatility: window.calculatePriceVolatility?.(validPrices),
+    volumeTrend,
+    priceTrend: trendLabel,
+    marketStructure,
+  });
+  elements.risk.textContent = riskAssessment?.level || 'Unavailable';
+  elements.riskExplanation.textContent = riskAssessment?.explanation || 'Risk engine data is unavailable.';
   const reasons = document.createDocumentFragment();
   analysis.reasons.forEach((reason) => {
     const item = document.createElement('li');
