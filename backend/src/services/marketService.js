@@ -1,6 +1,10 @@
 const { coinGeckoBaseUrl } = require('../config/env');
+const { getOrSet } = require('../utils/cache');
+
+const coinGeckoCacheTtl = 60 * 1000;
 
 // The MarketService is the only backend layer that communicates with CoinGecko.
+// Each complete upstream URL is cached for 60 seconds before a fresh request is made.
 const requestCoinGecko = async (path, query = {}) => {
   const url = new URL(path, coinGeckoBaseUrl);
   Object.entries(query).forEach(([key, value]) => {
@@ -9,15 +13,17 @@ const requestCoinGecko = async (path, query = {}) => {
     }
   });
 
-  const response = await fetch(url, { headers: { Accept: 'application/json' } });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const error = new Error(payload?.status?.error_message || 'CoinGecko data is currently unavailable.');
-    error.statusCode = response.status;
-    throw error;
-  }
+  return getOrSet(`coingecko:${url.toString()}`, coinGeckoCacheTtl, async () => {
+    const response = await fetch(url, { headers: { Accept: 'application/json' } });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      const error = new Error(payload?.status?.error_message || 'CoinGecko data is currently unavailable.');
+      error.statusCode = response.status;
+      throw error;
+    }
 
-  return payload;
+    return payload;
+  });
 };
 
 const fetchMarkets = ({ limit = 100, ids } = {}) => requestCoinGecko('/coins/markets', {
