@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A Magnum account that owns portfolios and watchlists.
+model User {
+  id         String      @id @default(uuid()) @db.Uuid
+  email      String      @unique
+  displayName String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  portfolios Portfolio[]
+  watchlists Watchlist[]
+}
+
+/// A named collection of cryptocurrency holdings owned by one user.
+model Portfolio {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  holdings  Holding[]
+
+  @@index([userId])
+}
+
+/// A single cryptocurrency position within a portfolio.
+model Holding {
+  id              String    @id @default(uuid()) @db.Uuid
+  portfolioId     String    @db.Uuid
+  coinId          String
+  symbol          String
+  quantity        Decimal   @db.Decimal(36, 18)
+  averageBuyPrice Decimal?  @db.Decimal(36, 18)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioId, coinId])
+  @@index([coinId])
+}
+
+/// A user-owned collection of coins to monitor.
+model Watchlist {
+  id        String          @id @default(uuid()) @db.Uuid
+  userId    String          @db.Uuid
+  name      String          @default("Watchlist")
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coins     WatchlistCoin[]
+
+  @@index([userId])
+}
+
+/// A cryptocurrency entry saved within a watchlist.
+model WatchlistCoin {
+  id          String    @id @default(uuid()) @db.Uuid
+  watchlistId String    @db.Uuid
+  coinId      String
+  symbol      String
+  addedAt     DateTime  @default(now())
+  watchlist   Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+
+  @@unique([watchlistId, coinId])
+  @@index([coinId])
+}

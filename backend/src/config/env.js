@@ -14,4 +14,5 @@ module.exports = {
   port: Number(requireEnvironmentValue('PORT')),
   coinGeckoBaseUrl: requireEnvironmentValue('COINGECKO_BASE_URL'),
   fearGreedApiUrl: requireEnvironmentValue('FEAR_GREED_API_URL'),
+  databaseUrl: requireEnvironmentValue('DATABASE_URL'),
 };
