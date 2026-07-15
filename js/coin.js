@@ -183,6 +183,13 @@ const renderMovingAverageLegend = () => {
 };
 
 // Bollinger Bands use a 20-period SMA with upper and lower bands at two deviations.
+const bollingerBandLabels = [
+  'Bollinger Upper (20, 2)',
+  'Bollinger Lower (20, 2)',
+  'Bollinger Middle (20)',
+];
+const bollingerBandVisibility = new Map(bollingerBandLabels.map((label) => [label, true]));
+
 const calculateBollingerBands = (prices, period = 20, multiplier = 2) => {
   const middleBand = calculateSma(prices, period);
   const upperBand = Array(prices.length).fill(null);
@@ -241,7 +248,43 @@ const createBollingerBandDatasets = (prices) => {
       tension: 0.25,
       spanGaps: false,
     },
-  ];
+  ].map((dataset) => ({
+    ...dataset,
+    hidden: !bollingerBandVisibility.get(dataset.label),
+  }));
+};
+
+// Toggle all three Bollinger Band overlays without affecting price or moving-average datasets.
+const renderBollingerBandToggle = () => {
+  const chart = window.priceChartInstance;
+  if (!chart) return;
+
+  let controls = document.getElementById('bollinger-band-controls');
+  if (!controls) {
+    controls = document.createElement('div');
+    controls.id = 'bollinger-band-controls';
+    controls.style.cssText = 'display:flex; flex-wrap:wrap; gap:0.5rem; margin:0.75rem 0;';
+    document.getElementById('price-chart')?.insertAdjacentElement('beforebegin', controls);
+  }
+
+  const allBandsVisible = bollingerBandLabels.every((label) => bollingerBandVisibility.get(label));
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn-secondary';
+  button.textContent = allBandsVisible ? 'Hide Bollinger Bands' : 'Show Bollinger Bands';
+  button.setAttribute('aria-pressed', String(allBandsVisible));
+  button.addEventListener('click', () => {
+    const nextVisibility = !allBandsVisible;
+    bollingerBandLabels.forEach((label) => {
+      bollingerBandVisibility.set(label, nextVisibility);
+      const datasetIndex = chart.data.datasets.findIndex((dataset) => dataset.label === label);
+      if (datasetIndex !== -1) chart.setDatasetVisibility(datasetIndex, nextVisibility);
+    });
+    chart.update();
+    renderBollingerBandToggle();
+  });
+
+  controls.replaceChildren(button);
 };
 
 const createPriceChartDatasets = (prices) => [
@@ -673,6 +716,10 @@ const renderPriceChart = (labels, prices) => {
                 movingAverageVisibility.set(dataset.label, nextVisibility);
                 renderMovingAverageLegend();
               }
+              if (bollingerBandLabels.includes(dataset.label)) {
+                bollingerBandVisibility.set(dataset.label, nextVisibility);
+                renderBollingerBandToggle();
+              }
               chart.update();
             },
           },
@@ -710,6 +757,7 @@ const renderPriceChart = (labels, prices) => {
   }
 
   renderMovingAverageLegend();
+  renderBollingerBandToggle();
   hideChartStatus();
 };
 
