@@ -6,4 +6,13 @@ const notFound = (request, response) => {
   });
 };
 
-module.exports = { notFound };
+// Forward upstream API failures as safe, consistent JSON responses.
+const errorHandler = (error, request, response, next) => {
+  console.error(error);
+  response.status(error.statusCode || 500).json({
+    status: 'error',
+    message: error.message || 'The server could not complete this request.',
+  });
+};
+
+module.exports = { notFound, errorHandler };
