@@ -263,6 +263,116 @@ const getVolumeTrend = (volumes, period = 20) => {
   return { label: 'volume stable', change };
 };
 
+const getLatestEmaCrossover = (fastEma, slowEma) => {
+  const currentIndex = fastEma.length - 1;
+  const previousIndex = currentIndex - 1;
+  const currentDifference = fastEma[currentIndex] - slowEma[currentIndex];
+  const previousDifference = fastEma[previousIndex] - slowEma[previousIndex];
+
+  if (!Number.isFinite(currentDifference)) return { score: 0, reason: 'EMA crossover data unavailable' };
+  if (Number.isFinite(previousDifference) && previousDifference <= 0 && currentDifference > 0) {
+    return { score: 2, reason: 'a bullish EMA 20/50 crossover just occurred' };
+  }
+  if (Number.isFinite(previousDifference) && previousDifference >= 0 && currentDifference < 0) {
+    return { score: -2, reason: 'a bearish EMA 20/50 crossover just occurred' };
+  }
+  return currentDifference > 0
+    ? { score: 1, reason: 'EMA 20 remains above EMA 50' }
+    : { score: -1, reason: 'EMA 20 remains below EMA 50' };
+};
+
+const getRsiSignal = (rsi) => {
+  if (!Number.isFinite(rsi)) return { score: 0, reason: 'RSI is unavailable' };
+  if (rsi <= 30) return { score: 2, reason: `RSI ${rsi.toFixed(1)} is oversold` };
+  if (rsi < 45) return { score: 1, reason: `RSI ${rsi.toFixed(1)} is recovering` };
+  if (rsi >= 70) return { score: -2, reason: `RSI ${rsi.toFixed(1)} is overbought` };
+  if (rsi > 55) return { score: -1, reason: `RSI ${rsi.toFixed(1)} is weakening` };
+  return { score: 0, reason: `RSI ${rsi.toFixed(1)} is neutral` };
+};
+
+const getMacdSignal = (macdLine, signalLine) => {
+  if (!Number.isFinite(macdLine) || !Number.isFinite(signalLine)) {
+    return { score: 0, reason: 'MACD is unavailable' };
+  }
+  return macdLine >= signalLine
+    ? { score: 1, reason: 'MACD is above its signal line' }
+    : { score: -1, reason: 'MACD is below its signal line' };
+};
+
+const getVolumeSignal = (volumeTrend, priceChange) => {
+  if (volumeTrend.label === 'volume rising' && priceChange > 2) {
+    return { score: 1, reason: 'rising volume confirms the advance' };
+  }
+  if (volumeTrend.label === 'volume rising' && priceChange < -2) {
+    return { score: -1, reason: 'rising volume confirms the decline' };
+  }
+  return { score: 0, reason: volumeTrend.label };
+};
+
+const getTrendSignal = (priceChange) => {
+  if (priceChange > 2) return { score: 1, reason: `price trend is up ${priceChange.toFixed(2)}%` };
+  if (priceChange < -2) return { score: -1, reason: `price trend is down ${Math.abs(priceChange).toFixed(2)}%` };
+  return { score: 0, reason: 'price trend is sideways' };
+};
+
+const getSignalDetails = (score) => {
+  if (score >= 5) return { label: 'Strong Buy', className: 'price-positive' };
+  if (score >= 2) return { label: 'Buy', className: 'price-positive' };
+  if (score <= -5) return { label: 'Strong Sell', className: 'price-negative' };
+  if (score <= -2) return { label: 'Sell', className: 'price-negative' };
+  return { label: 'Hold', className: '' };
+};
+
+// Combine independent indicator evaluations so future signals can be added without changing the UI.
+const calculateTradingSignal = (prices, volumes) => {
+  const validPrices = prices.map(Number).filter(Number.isFinite);
+  if (validPrices.length < 50) return null;
+
+  const priceChange = ((validPrices.at(-1) - validPrices[0]) / validPrices[0]) * 100;
+  const rsi = calculateRsi(validPrices);
+  const macd = calculateMacd(validPrices);
+  const fastEma = calculateEma(validPrices, 20);
+  const slowEma = calculateEma(validPrices, 50);
+  const indicators = [
+    getRsiSignal(rsi),
+    getMacdSignal(getLastFiniteValue(macd.macdLine), getLastFiniteValue(macd.signalLine)),
+    getLatestEmaCrossover(fastEma, slowEma),
+    getVolumeSignal(getVolumeTrend(volumes), priceChange),
+    getTrendSignal(priceChange),
+  ];
+  const score = indicators.reduce((total, indicator) => total + indicator.score, 0);
+  const signal = getSignalDetails(score);
+  const confidence = Math.min(100, Math.round((Math.abs(score) / 7) * 100));
+
+  return {
+    ...signal,
+    confidence,
+    reasoning: indicators.map((indicator) => indicator.reason).join('; '),
+  };
+};
+
+const updateTradingSignalDisplay = (prices, volumes) => {
+  const signalElement = document.getElementById('trading-signal');
+  const confidenceElement = document.getElementById('trading-signal-confidence');
+  const reasoningElement = document.getElementById('trading-signal-reasoning');
+  if (!signalElement || !confidenceElement || !reasoningElement) return;
+
+  const signal = calculateTradingSignal(prices, volumes);
+  if (!signal) {
+    signalElement.textContent = 'Insufficient data';
+    confidenceElement.textContent = '--';
+    reasoningElement.textContent = 'At least 50 price points are needed for the EMA 50 signal.';
+    signalElement.classList.remove('price-positive', 'price-negative');
+    return;
+  }
+
+  signalElement.textContent = signal.label;
+  signalElement.classList.remove('price-positive', 'price-negative');
+  if (signal.className) signalElement.classList.add(signal.className);
+  confidenceElement.textContent = `${signal.confidence}%`;
+  reasoningElement.textContent = signal.reasoning;
+};
+
 const updateAiSummary = (prices, volumes) => {
   const elements = {
     trend: document.getElementById('ai-summary-trend'),
@@ -630,11 +740,13 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     renderMacdChart(labels, prices);
     updateRsiDisplay(prices);
     updateAiSummary(prices, volumes);
+    updateTradingSignalDisplay(prices, volumes);
   } catch (historyError) {
     console.error('Could not load coin history:', historyError);
     showChartStatus('We could not load the chart data right now. Please try again.', 'error');
     updateRsiDisplay([]);
     updateAiSummary([], []);
+    updateTradingSignalDisplay([], []);
   }
 };
 
