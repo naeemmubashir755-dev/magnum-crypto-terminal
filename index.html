@@ -9,6 +9,7 @@
     <script src="js/app.js" defer></script>
     <script src="js/navigation.js" defer></script>
     <script src="js/api.js" defer></script>
+    <script src="js/market-movers.js" defer></script>
     <script src="js/utils.js" defer></script>
   </head>
   <body>
@@ -52,6 +53,32 @@
       <section aria-labelledby="market-overview-title">
         <h2 id="market-overview-title">Market Overview</h2>
         <p>BTC: $68,420 | ETH: $3,760 | SOL: $180</p>
+      </section>
+
+      <section aria-labelledby="market-movers-title" class="market-movers-section">
+        <h2 id="market-movers-title">Market Movers</h2>
+        <div id="market-movers-status" class="table-status" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Loading market movers...</span>
+        </div>
+        <div id="market-movers-grid" class="market-movers-grid" hidden>
+          <article class="market-movers-card">
+            <h3>Top Gainers</h3>
+            <ol id="top-gainers-list" class="market-movers-list"></ol>
+          </article>
+          <article class="market-movers-card">
+            <h3>Top Losers</h3>
+            <ol id="top-losers-list" class="market-movers-list"></ol>
+          </article>
+          <article class="market-movers-card">
+            <h3>Highest Volume</h3>
+            <ol id="highest-volume-list" class="market-movers-list"></ol>
+          </article>
+          <article class="market-movers-card">
+            <h3>Trending Coins</h3>
+            <ol id="trending-coins-list" class="market-movers-list"></ol>
+          </article>
+        </div>
       </section>
 
       <section aria-labelledby="top-gainers-title">

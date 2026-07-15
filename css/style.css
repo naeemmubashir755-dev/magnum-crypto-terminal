@@ -663,6 +663,60 @@ textarea:focus {
 .heatmap-loss { background: #b91c1c; }
 .heatmap-strong-loss { background: #7f1d1d; }
 
+.market-movers-section {
+  margin: 2rem 0;
+}
+
+.market-movers-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.market-movers-card {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface-color);
+}
+
+.market-movers-card h3 {
+  margin: 0 0 0.75rem;
+}
+
+.market-movers-list {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1.75rem;
+  margin: 0;
+}
+
+.market-mover-link {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.market-mover-link:hover,
+.market-mover-link:focus-visible {
+  color: var(--accent-color);
+}
+
+.market-mover-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.market-mover-metric {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 768px) {
   .crypto-heatmap {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -672,6 +726,10 @@ textarea:focus {
   .heatmap-tile {
     grid-column: span 2 !important;
     grid-row: span 1 !important;
+  }
+
+  .market-movers-grid {
+    grid-template-columns: 1fr;
   }
 }
 
