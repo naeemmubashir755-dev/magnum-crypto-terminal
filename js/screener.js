@@ -3,8 +3,19 @@ document.addEventListener('DOMContentLoaded', async () => {
   const tableBody = document.getElementById('screener-table-body');
   const status = document.getElementById('screener-status');
   const filtersForm = document.getElementById('screener-filters');
+  const saveForm = document.getElementById('screener-save-form');
+  const nameInput = document.getElementById('screener-name');
+  const savedScreenerSelect = document.getElementById('saved-screener-select');
+  const savedScreenerStatus = document.getElementById('saved-screener-status');
+  const loadScreenerButton = document.getElementById('load-screener');
+  const renameScreenerButton = document.getElementById('rename-screener');
+  const deleteScreenerButton = document.getElementById('delete-screener');
 
-  if (!table || !tableBody || !status || !filtersForm) return;
+  if (!table || !tableBody || !status || !filtersForm || !saveForm || !nameInput
+    || !savedScreenerSelect || !savedScreenerStatus || !loadScreenerButton
+    || !renameScreenerButton || !deleteScreenerButton) return;
+
+  const savedScreenersStorageKey = 'crypto-terminal-saved-screeners';
 
   const filterFields = {
     marketCap: { input: filtersForm.elements.marketCap, coinKey: 'market_cap' },
@@ -101,6 +112,55 @@ document.addEventListener('DOMContentLoaded', async () => {
     minimum: input.value === '' ? null : Number(input.value),
   })).filter(({ minimum }) => Number.isFinite(minimum));
 
+  const getFilterValues = () => Object.fromEntries(
+    Object.entries(filterFields).map(([name, { input }]) => [name, input.value]),
+  );
+
+  const showSavedScreenerMessage = (message, type = '') => {
+    savedScreenerStatus.textContent = message;
+    savedScreenerStatus.className = `holding-form-status${type ? ` ${type}` : ''}`;
+  };
+
+  const readSavedScreeners = () => {
+    try {
+      const storedScreeners = JSON.parse(window.localStorage.getItem(savedScreenersStorageKey) || '[]');
+      return Array.isArray(storedScreeners) ? storedScreeners : [];
+    } catch (error) {
+      console.error('Unable to read saved screeners:', error);
+      showSavedScreenerMessage('Saved screeners are unavailable in this browser.', 'error');
+      return [];
+    }
+  };
+
+  const writeSavedScreeners = (screeners) => {
+    try {
+      window.localStorage.setItem(savedScreenersStorageKey, JSON.stringify(screeners));
+      return true;
+    } catch (error) {
+      console.error('Unable to save screeners:', error);
+      showSavedScreenerMessage('Unable to save screeners in this browser.', 'error');
+      return false;
+    }
+  };
+
+  const renderSavedScreenerOptions = (screeners, selectedId = '') => {
+    const options = document.createDocumentFragment();
+    const placeholder = new Option('Select a saved screener', '');
+    options.appendChild(placeholder);
+    screeners.forEach((screener) => {
+      options.appendChild(new Option(screener.name, screener.id));
+    });
+    savedScreenerSelect.replaceChildren(options);
+    savedScreenerSelect.value = selectedId;
+  };
+
+  const getSelectedScreener = () => readSavedScreeners().find(
+    (screener) => screener.id === savedScreenerSelect.value,
+  );
+
+  const createScreenerId = () => (window.crypto?.randomUUID?.()
+    || `screener-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
   // Filter the in-memory response only; controls never trigger another API request.
   const getFilteredCoins = () => {
     const activeFilters = getActiveFilters();
@@ -170,6 +230,77 @@ document.addEventListener('DOMContentLoaded', async () => {
     status.textContent = `${filteredCoins.length} ${filteredCoins.length === 1 ? 'cryptocurrency' : 'cryptocurrencies'} match your filters.`;
   };
 
+  // Saved screeners contain the current filter values and selected sort order only.
+  const loadScreener = (screener) => {
+    Object.entries(filterFields).forEach(([name, { input }]) => {
+      input.value = screener.filters?.[name] || '';
+    });
+
+    const savedSort = screener.sort;
+    currentSort = savedSort && Object.values(sortFields).includes(savedSort.key)
+      && ['asc', 'desc'].includes(savedSort.direction)
+      ? savedSort
+      : { key: null, direction: 'asc' };
+    updateScreener();
+  };
+
+  const saveCurrentScreener = () => {
+    const name = nameInput.value.trim();
+    if (!name) {
+      showSavedScreenerMessage('Enter a name before saving.', 'error');
+      nameInput.focus();
+      return;
+    }
+
+    const screeners = readSavedScreeners();
+    const screener = {
+      id: createScreenerId(),
+      name,
+      filters: getFilterValues(),
+      sort: { ...currentSort },
+    };
+    if (!writeSavedScreeners([...screeners, screener])) return;
+
+    renderSavedScreenerOptions([...screeners, screener], screener.id);
+    nameInput.value = '';
+    showSavedScreenerMessage(`Saved "${name}".`, 'success');
+  };
+
+  const renameSelectedScreener = () => {
+    const screener = getSelectedScreener();
+    const name = nameInput.value.trim();
+    if (!screener) {
+      showSavedScreenerMessage('Select a screener to rename.', 'error');
+      return;
+    }
+    if (!name) {
+      showSavedScreenerMessage('Enter a new name before renaming.', 'error');
+      nameInput.focus();
+      return;
+    }
+
+    const screeners = readSavedScreeners().map((item) => (
+      item.id === screener.id ? { ...item, name } : item
+    ));
+    if (!writeSavedScreeners(screeners)) return;
+    renderSavedScreenerOptions(screeners, screener.id);
+    nameInput.value = '';
+    showSavedScreenerMessage(`Renamed to "${name}".`, 'success');
+  };
+
+  const deleteSelectedScreener = () => {
+    const screener = getSelectedScreener();
+    if (!screener) {
+      showSavedScreenerMessage('Select a screener to delete.', 'error');
+      return;
+    }
+
+    const screeners = readSavedScreeners().filter((item) => item.id !== screener.id);
+    if (!writeSavedScreeners(screeners)) return;
+    renderSavedScreenerOptions(screeners);
+    showSavedScreenerMessage(`Deleted "${screener.name}".`, 'success');
+  };
+
   const showError = (message) => {
     status.classList.add('error');
     status.textContent = message;
@@ -180,7 +311,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   filtersForm.addEventListener('reset', () => {
     window.requestAnimationFrame(updateScreener);
   });
+  saveForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    saveCurrentScreener();
+  });
+  loadScreenerButton.addEventListener('click', () => {
+    const screener = getSelectedScreener();
+    if (!screener) {
+      showSavedScreenerMessage('Select a screener to load.', 'error');
+      return;
+    }
+    loadScreener(screener);
+    showSavedScreenerMessage(`Loaded "${screener.name}".`, 'success');
+  });
+  renameScreenerButton.addEventListener('click', renameSelectedScreener);
+  deleteScreenerButton.addEventListener('click', deleteSelectedScreener);
   initializeSortControls();
+  renderSavedScreenerOptions(readSavedScreeners());
 
   try {
     allCoins = await window.fetchMarketData(100);
