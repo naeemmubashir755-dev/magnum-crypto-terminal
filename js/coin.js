@@ -13,6 +13,62 @@ const formatHistoryForChart = (history) => {
   return { labels, prices };
 };
 
+// Calculate the 14-period RSI with Wilder's smoothed average gain and loss method.
+const calculateRsi = (prices, period = 14) => {
+  const validPrices = prices.map(Number).filter(Number.isFinite);
+  if (validPrices.length <= period) return null;
+
+  let gains = 0;
+  let losses = 0;
+
+  for (let index = 1; index <= period; index += 1) {
+    const change = validPrices[index] - validPrices[index - 1];
+    if (change >= 0) gains += change;
+    else losses += Math.abs(change);
+  }
+
+  let averageGain = gains / period;
+  let averageLoss = losses / period;
+
+  for (let index = period + 1; index < validPrices.length; index += 1) {
+    const change = validPrices[index] - validPrices[index - 1];
+    const gain = Math.max(change, 0);
+    const loss = Math.max(-change, 0);
+    averageGain = ((averageGain * (period - 1)) + gain) / period;
+    averageLoss = ((averageLoss * (period - 1)) + loss) / period;
+  }
+
+  if (averageLoss === 0) return averageGain === 0 ? 50 : 100;
+  const relativeStrength = averageGain / averageLoss;
+  return 100 - (100 / (1 + relativeStrength));
+};
+
+const getRsiState = (rsi) => {
+  if (rsi >= 70) return { label: 'Overbought', className: 'price-negative' };
+  if (rsi <= 30) return { label: 'Oversold', className: 'price-positive' };
+  return { label: 'Neutral', className: '' };
+};
+
+const updateRsiDisplay = (prices) => {
+  const valueElement = document.getElementById('rsi-value');
+  const statusElement = document.getElementById('rsi-status');
+  if (!valueElement || !statusElement) return;
+
+  const rsi = calculateRsi(prices);
+  if (!Number.isFinite(rsi)) {
+    valueElement.textContent = '--';
+    statusElement.textContent = 'Insufficient data';
+    statusElement.classList.remove('price-positive', 'price-negative');
+    return;
+  }
+
+  const state = getRsiState(rsi);
+  valueElement.textContent = rsi.toFixed(2);
+  statusElement.textContent = state.label;
+  statusElement.classList.remove('price-positive', 'price-negative');
+  if (state.className) statusElement.classList.add(state.className);
+};
+
 const showChartStatus = (message, type = 'loading') => {
   const chartContainer = document.getElementById('price-chart');
 
@@ -231,38 +287,12 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     }
 
     renderPriceChart(labels, prices);
+    updateRsiDisplay(prices);
   } catch (historyError) {
     console.error('Could not load coin history:', historyError);
     showChartStatus('We could not load the chart data right now. Please try again.', 'error');
+    updateRsiDisplay([]);
   }
-};
-
-const getWatchlist = () => {
-  try {
-    const storedWatchlist = localStorage.getItem('crypto-watchlist');
-    return storedWatchlist ? JSON.parse(storedWatchlist) : [];
-  } catch (error) {
-    console.error('Could not read watchlist:', error);
-    return [];
-  }
-};
-
-const saveWatchlist = (watchlist) => {
-  localStorage.setItem('crypto-watchlist', JSON.stringify(watchlist));
-};
-
-const addCoinToWatchlist = (coinId) => {
-  if (!coinId) {
-    return;
-  }
-
-  const watchlist = getWatchlist();
-  if (!watchlist.includes(coinId)) {
-    watchlist.push(coinId);
-    saveWatchlist(watchlist);
-  }
-
-  console.log('Updated watchlist:', watchlist);
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
