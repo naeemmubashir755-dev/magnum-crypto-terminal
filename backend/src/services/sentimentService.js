@@ -1,5 +1,7 @@
+const { fearGreedApiUrl } = require('../config/env');
+
 const fetchFearGreedIndex = async () => {
-  const response = await fetch('https://api.alternative.me/fng/?limit=1&format=json', {
+  const response = await fetch(fearGreedApiUrl, {
     headers: { Accept: 'application/json' },
   });
   const payload = await response.json().catch(() => null);

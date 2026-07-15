@@ -1,5 +1,6 @@
 (function () {
-  const API_BASE_URL = window.MAGNUM_API_URL || 'http://localhost:5000/api';
+  // Same-origin deployments use /api; hosts may inject MAGNUM_API_URL at runtime.
+  const API_BASE_URL = window.MAGNUM_API_URL || '/api';
 
   // All frontend data requests pass through the Magnum backend.
   async function requestBackend(path, fallbackMessage) {
