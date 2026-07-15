@@ -13,7 +13,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     change24h: { input: filtersForm.elements.change24h, coinKey: 'price_change_percentage_24h' },
     change7d: { input: filtersForm.elements.change7d, coinKey: 'price_change_percentage_7d_in_currency' },
   };
+  const sortFields = {
+    Price: 'current_price',
+    '24h Change': 'price_change_percentage_24h',
+    '7d Change': 'price_change_percentage_7d_in_currency',
+    'Market Cap': 'market_cap',
+    Volume: 'total_volume',
+  };
   let allCoins = [];
+  let currentSort = { key: null, direction: 'asc' };
 
   const currencyFormatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -102,9 +110,62 @@ document.addEventListener('DOMContentLoaded', async () => {
     }));
   };
 
+  const sortCoins = (coins) => {
+    if (!currentSort.key) return coins;
+
+    return [...coins].sort((firstCoin, secondCoin) => {
+      const firstValue = Number(firstCoin[currentSort.key]);
+      const secondValue = Number(secondCoin[currentSort.key]);
+      const normalizedFirstValue = Number.isFinite(firstValue) ? firstValue : -Infinity;
+      const normalizedSecondValue = Number.isFinite(secondValue) ? secondValue : -Infinity;
+
+      return currentSort.direction === 'asc'
+        ? normalizedFirstValue - normalizedSecondValue
+        : normalizedSecondValue - normalizedFirstValue;
+    });
+  };
+
+  const updateSortControls = () => {
+    table.querySelectorAll('button[data-sort-key]').forEach((button) => {
+      const isActive = button.dataset.sortKey === currentSort.key;
+      button.textContent = isActive
+        ? `${button.dataset.sortLabel} (${currentSort.direction})`
+        : button.dataset.sortLabel;
+      button.closest('th').setAttribute('aria-sort', isActive
+        ? (currentSort.direction === 'asc' ? 'ascending' : 'descending')
+        : 'none');
+    });
+  };
+
+  // Turn the existing numeric column headers into accessible sort controls.
+  const initializeSortControls = () => {
+    Array.from(table.querySelectorAll('thead th')).forEach((header) => {
+      const label = header.textContent.trim();
+      const sortKey = sortFields[label];
+      if (!sortKey) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn-secondary';
+      button.dataset.sortKey = sortKey;
+      button.dataset.sortLabel = label;
+      button.textContent = label;
+      button.addEventListener('click', () => {
+        currentSort = currentSort.key === sortKey
+          ? { key: sortKey, direction: currentSort.direction === 'asc' ? 'desc' : 'asc' }
+          : { key: sortKey, direction: 'asc' };
+        updateScreener();
+      });
+
+      header.replaceChildren(button);
+      header.setAttribute('aria-sort', 'none');
+    });
+  };
+
   const updateScreener = () => {
-    const filteredCoins = getFilteredCoins();
+    const filteredCoins = sortCoins(getFilteredCoins());
     renderCoins(filteredCoins);
+    updateSortControls();
     status.classList.remove('error');
     status.textContent = `${filteredCoins.length} ${filteredCoins.length === 1 ? 'cryptocurrency' : 'cryptocurrencies'} match your filters.`;
   };
@@ -119,6 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   filtersForm.addEventListener('reset', () => {
     window.requestAnimationFrame(updateScreener);
   });
+  initializeSortControls();
 
   try {
     allCoins = await window.fetchMarketData(100);
