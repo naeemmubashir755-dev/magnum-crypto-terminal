@@ -348,6 +348,102 @@ const getVolumeTrend = (volumes, period = 20) => {
   return { label: 'volume stable', change };
 };
 
+const formatCompactVolume = (value) => new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  notation: 'compact',
+  maximumFractionDigits: 2,
+}).format(value);
+
+const getVolumeBarColors = (prices, volumes) => volumes.map((_, index) => {
+  const currentPrice = Number(prices[index]);
+  const previousPrice = Number(prices[index - 1]);
+  if (index === 0 || !Number.isFinite(currentPrice) || !Number.isFinite(previousPrice)) {
+    return 'rgba(148, 163, 184, 0.55)';
+  }
+  if (currentPrice > previousPrice) return 'rgba(16, 185, 129, 0.6)';
+  if (currentPrice < previousPrice) return 'rgba(239, 68, 68, 0.6)';
+  return 'rgba(148, 163, 184, 0.55)';
+});
+
+const updateVolumeStatistics = (volumes) => {
+  const currentVolumeElement = document.getElementById('volume-current');
+  const averageElement = document.getElementById('volume-moving-average');
+  const trendElement = document.getElementById('volume-trend');
+  if (!currentVolumeElement || !averageElement || !trendElement) return;
+
+  const validVolumes = volumes.map(Number).filter(Number.isFinite);
+  const currentVolume = getLastFiniteValue(validVolumes);
+  const movingAverage = getLastFiniteValue(calculateSma(validVolumes, 20));
+  const trend = getVolumeTrend(validVolumes);
+
+  currentVolumeElement.textContent = Number.isFinite(currentVolume) ? formatCompactVolume(currentVolume) : '--';
+  averageElement.textContent = Number.isFinite(movingAverage) ? formatCompactVolume(movingAverage) : '--';
+  trendElement.textContent = trend.label;
+};
+
+// Render the historical volume bars and 20-period volume moving average beneath the price chart.
+const renderVolumeChart = (labels, prices, volumes) => {
+  const chartContainer = document.getElementById('volume-chart');
+  if (!chartContainer || !labels?.length || !prices?.length || typeof window.Chart === 'undefined') return;
+
+  const alignedVolumes = prices.map((_, index) => {
+    const volume = Number(volumes[index]);
+    return Number.isFinite(volume) ? volume : null;
+  });
+  updateVolumeStatistics(alignedVolumes);
+
+  let canvas = chartContainer.querySelector('canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-label', 'Trading volume analysis chart');
+    chartContainer.appendChild(canvas);
+  }
+
+  const datasets = [
+    {
+      type: 'bar',
+      label: 'Trading Volume',
+      data: alignedVolumes,
+      backgroundColor: getVolumeBarColors(prices, alignedVolumes),
+      borderWidth: 0,
+    },
+    {
+      type: 'line',
+      label: 'Volume MA (20)',
+      data: calculateSma(alignedVolumes.map((volume) => volume ?? NaN), 20),
+      borderColor: '#f59e0b',
+      borderWidth: 2,
+      pointRadius: 0,
+      tension: 0.25,
+    },
+  ];
+
+  if (!window.volumeChartInstance) {
+    window.volumeChartInstance = new window.Chart(canvas.getContext('2d'), {
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true } },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            ticks: {
+              callback: (value) => formatCompactVolume(value),
+            },
+          },
+        },
+      },
+    });
+  } else {
+    window.volumeChartInstance.data.labels = labels;
+    window.volumeChartInstance.data.datasets = datasets;
+    window.volumeChartInstance.update('active');
+  }
+};
+
 const getLatestEmaCrossover = (fastEma, slowEma) => {
   const currentIndex = fastEma.length - 1;
   const previousIndex = currentIndex - 1;
@@ -846,6 +942,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     }
 
     renderPriceChart(labels, prices);
+    renderVolumeChart(labels, prices, volumes);
     renderMacdChart(labels, prices);
     updateRsiDisplay(prices);
     updateAiSummary(prices, volumes);
@@ -854,6 +951,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     console.error('Could not load coin history:', historyError);
     showChartStatus('We could not load the chart data right now. Please try again.', 'error');
     updateRsiDisplay([]);
+    updateVolumeStatistics([]);
     updateAiSummary([], []);
     updateTradingSignalDisplay([], []);
   }
