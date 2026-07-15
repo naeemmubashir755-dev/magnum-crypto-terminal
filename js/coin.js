@@ -109,6 +109,9 @@ const calculateEmaSeries = (series, period) => {
 
 const calculateEma = (prices, period) => calculateEmaSeries(prices, period);
 
+const movingAverageLabels = ['SMA 20', 'SMA 50', 'EMA 20', 'EMA 50'];
+const movingAverageVisibility = new Map(movingAverageLabels.map((label) => [label, true]));
+
 const createMovingAverageDatasets = (prices) => [
   {
     label: 'SMA 20',
@@ -138,7 +141,46 @@ const createMovingAverageDatasets = (prices) => [
   fill: false,
   tension: 0.25,
   spanGaps: false,
+  hidden: !movingAverageVisibility.get(dataset.label),
 }));
+
+// Create a focused, accessible legend for toggling moving-average overlays only.
+const renderMovingAverageLegend = () => {
+  const chartSection = document.getElementById('chart-section');
+  const chart = window.priceChartInstance;
+  if (!chartSection || !chart) return;
+
+  let legend = document.getElementById('moving-average-legend');
+  if (!legend) {
+    legend = document.createElement('div');
+    legend.id = 'moving-average-legend';
+    legend.setAttribute('aria-label', 'Moving average chart controls');
+    legend.style.cssText = 'display:flex; flex-wrap:wrap; gap:0.5rem; margin:0.75rem 0;';
+    document.getElementById('price-chart')?.insertAdjacentElement('beforebegin', legend);
+  }
+
+  const controls = document.createDocumentFragment();
+  movingAverageLabels.forEach((label) => {
+    const isVisible = movingAverageVisibility.get(label);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn-secondary';
+    button.textContent = label;
+    button.setAttribute('aria-pressed', String(isVisible));
+    button.style.opacity = isVisible ? '1' : '0.55';
+    button.addEventListener('click', () => {
+      const nextVisibility = !movingAverageVisibility.get(label);
+      movingAverageVisibility.set(label, nextVisibility);
+      const datasetIndex = chart.data.datasets.findIndex((dataset) => dataset.label === label);
+      if (datasetIndex !== -1) chart.setDatasetVisibility(datasetIndex, nextVisibility);
+      chart.update();
+      renderMovingAverageLegend();
+    });
+    controls.appendChild(button);
+  });
+
+  legend.replaceChildren(controls);
+};
 
 // Bollinger Bands use a 20-period SMA with upper and lower bands at two deviations.
 const calculateBollingerBands = (prices, period = 20, multiplier = 2) => {
@@ -615,6 +657,18 @@ const renderPriceChart = (labels, prices) => {
               boxWidth: 12,
               boxHeight: 2,
             },
+            onClick: (event, legendItem, legend) => {
+              const chart = legend.chart;
+              const datasetIndex = legendItem.datasetIndex;
+              const dataset = chart.data.datasets[datasetIndex];
+              const nextVisibility = !chart.isDatasetVisible(datasetIndex);
+              chart.setDatasetVisibility(datasetIndex, nextVisibility);
+              if (movingAverageLabels.includes(dataset.label)) {
+                movingAverageVisibility.set(dataset.label, nextVisibility);
+                renderMovingAverageLegend();
+              }
+              chart.update();
+            },
           },
           tooltip: {
             enabled: true,
@@ -649,6 +703,7 @@ const renderPriceChart = (labels, prices) => {
     window.priceChartInstance.update('active');
   }
 
+  renderMovingAverageLegend();
   hideChartStatus();
 };
 
