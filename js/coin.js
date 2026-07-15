@@ -476,25 +476,31 @@ const updateAiSummary = (prices, volumes) => {
   elements.resistance.textContent = `${formatSummaryPrice(resistance)} (recent range high)`;
 };
 
+const initializeMacdCollapse = (section, container) => {
+  const toggle = document.getElementById('macd-toggle');
+  if (!toggle || toggle.dataset.initialized) return;
+
+  toggle.dataset.initialized = 'true';
+  toggle.addEventListener('click', () => {
+    const isCollapsed = !container.hidden;
+    container.hidden = isCollapsed;
+    toggle.setAttribute('aria-expanded', String(!isCollapsed));
+    toggle.textContent = isCollapsed ? 'Expand MACD' : 'Collapse MACD';
+    section.classList.toggle('is-collapsed', isCollapsed);
+
+    // Chart.js needs a resize after its hidden container becomes visible again.
+    if (!isCollapsed) window.macdChartInstance?.resize();
+  });
+};
+
 const getMacdChartContainer = () => {
-  let container = document.getElementById('macd-chart');
-  if (container) return container;
+  const container = document.getElementById('macd-chart');
+  const section = document.getElementById('macd-section');
+  if (!container || !section) return null;
 
-  const priceChartSection = document.getElementById('chart-section');
-  if (!priceChartSection) return null;
-
-  const section = document.createElement('section');
-  section.id = 'macd-section';
-  section.setAttribute('aria-labelledby', 'macd-title');
-  section.style.marginBottom = '2rem';
-  section.innerHTML = '<h2 id="macd-title">MACD</h2>';
-
-  container = document.createElement('div');
-  container.id = 'macd-chart';
   container.style.minHeight = '250px';
   container.style.position = 'relative';
-  section.appendChild(container);
-  priceChartSection.insertAdjacentElement('afterend', section);
+  initializeMacdCollapse(section, container);
   return container;
 };
 
