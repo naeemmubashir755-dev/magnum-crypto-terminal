@@ -49,6 +49,29 @@
 
       <section aria-labelledby="screener-table-title">
         <h2 id="screener-table-title">Top 100 Cryptocurrencies</h2>
+        <form id="screener-filters" class="screener-filters" aria-label="Screener filters">
+          <div>
+            <label for="min-market-cap">Minimum market cap (USD)</label>
+            <input id="min-market-cap" name="marketCap" type="number" min="0" step="any" inputmode="decimal" placeholder="Any market cap" />
+          </div>
+          <div>
+            <label for="min-price">Minimum price (USD)</label>
+            <input id="min-price" name="price" type="number" min="0" step="any" inputmode="decimal" placeholder="Any price" />
+          </div>
+          <div>
+            <label for="min-volume">Minimum volume (USD)</label>
+            <input id="min-volume" name="volume" type="number" min="0" step="any" inputmode="decimal" placeholder="Any volume" />
+          </div>
+          <div>
+            <label for="min-change-24h">Minimum 24h change (%)</label>
+            <input id="min-change-24h" name="change24h" type="number" step="any" inputmode="decimal" placeholder="Any 24h change" />
+          </div>
+          <div>
+            <label for="min-change-7d">Minimum 7d change (%)</label>
+            <input id="min-change-7d" name="change7d" type="number" step="any" inputmode="decimal" placeholder="Any 7d change" />
+          </div>
+          <button type="reset" class="btn-secondary">Clear filters</button>
+        </form>
         <div id="screener-status" class="table-status" role="status" aria-live="polite">
           <span class="spinner" aria-hidden="true"></span>
           <span>Loading market data...</span>

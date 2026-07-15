@@ -588,6 +588,23 @@ textarea:focus {
   border-radius: 0.75rem;
 }
 
+.screener-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1rem;
+  align-items: end;
+  max-width: none;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface-color);
+}
+
+.screener-filters button {
+  width: 100%;
+}
+
 .screener-table-wrapper:focus {
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
