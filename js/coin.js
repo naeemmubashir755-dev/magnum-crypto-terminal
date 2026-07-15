@@ -69,6 +69,80 @@ const updateRsiDisplay = (prices) => {
   if (state.className) statusElement.classList.add(state.className);
 };
 
+// Return an aligned simple moving average series, leaving early periods empty.
+const calculateSma = (prices, period) => prices.map((_, index) => {
+  if (index < period - 1) return null;
+
+  const windowPrices = prices.slice(index - period + 1, index + 1).map(Number);
+  if (!windowPrices.every(Number.isFinite)) return null;
+
+  return windowPrices.reduce((sum, price) => sum + price, 0) / period;
+});
+
+// Return an aligned exponential moving average series using the standard EMA multiplier.
+const calculateEma = (prices, period) => {
+  const values = prices.map(Number);
+  const averages = Array(values.length).fill(null);
+  if (values.length < period || !values.slice(0, period).every(Number.isFinite)) return averages;
+
+  const multiplier = 2 / (period + 1);
+  let previousAverage = values.slice(0, period).reduce((sum, value) => sum + value, 0) / period;
+  averages[period - 1] = previousAverage;
+
+  for (let index = period; index < values.length; index += 1) {
+    if (!Number.isFinite(values[index])) continue;
+    previousAverage = ((values[index] - previousAverage) * multiplier) + previousAverage;
+    averages[index] = previousAverage;
+  }
+
+  return averages;
+};
+
+const createMovingAverageDatasets = (prices) => [
+  {
+    label: 'SMA 20',
+    data: calculateSma(prices, 20),
+    borderColor: '#f59e0b',
+  },
+  {
+    label: 'SMA 50',
+    data: calculateSma(prices, 50),
+    borderColor: '#a855f7',
+  },
+  {
+    label: 'EMA 20',
+    data: calculateEma(prices, 20),
+    borderColor: '#10b981',
+  },
+  {
+    label: 'EMA 50',
+    data: calculateEma(prices, 50),
+    borderColor: '#ec4899',
+  },
+].map((dataset) => ({
+  ...dataset,
+  backgroundColor: 'transparent',
+  borderWidth: 1.5,
+  pointRadius: 0,
+  fill: false,
+  tension: 0.25,
+  spanGaps: false,
+}));
+
+const createPriceChartDatasets = (prices) => [
+  {
+    label: 'Price (USD)',
+    data: prices,
+    borderColor: '#3b82f6',
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    pointRadius: 0,
+    fill: false,
+    tension: 0.35,
+  },
+  ...createMovingAverageDatasets(prices),
+];
+
 const showChartStatus = (message, type = 'loading') => {
   const chartContainer = document.getElementById('price-chart');
 
@@ -142,18 +216,7 @@ const renderPriceChart = (labels, prices) => {
       type: 'line',
       data: {
         labels,
-        datasets: [
-          {
-            label: 'Price (USD)',
-            data: prices,
-            borderColor: '#3b82f6',
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            pointRadius: 0,
-            fill: false,
-            tension: 0.35,
-          },
-        ],
+        datasets: createPriceChartDatasets(prices),
       },
       options: {
         responsive: true,
@@ -164,7 +227,12 @@ const renderPriceChart = (labels, prices) => {
         },
         plugins: {
           legend: {
-            display: false,
+            display: true,
+            position: 'bottom',
+            labels: {
+              boxWidth: 12,
+              boxHeight: 2,
+            },
           },
           tooltip: {
             enabled: true,
@@ -191,7 +259,7 @@ const renderPriceChart = (labels, prices) => {
     });
   } else {
     window.priceChartInstance.data.labels = labels;
-    window.priceChartInstance.data.datasets[0].data = prices;
+    window.priceChartInstance.data.datasets = createPriceChartDatasets(prices);
     window.priceChartInstance.options.animation = {
       duration: 800,
       easing: 'easeInOutQuart',
