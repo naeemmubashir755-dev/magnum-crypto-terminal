@@ -9,11 +9,11 @@ datasource db {
 
 /// A Magnum account that owns portfolios and watchlists.
 model User {
-  id         String      @id @default(uuid()) @db.Uuid
-  email      String      @unique
-  displayName String?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id           String      @id @default(uuid()) @db.Uuid
+  username     String      @unique
+  email        String      @unique
+  passwordHash String
+  createdAt    DateTime    @default(now())
   portfolios Portfolio[]
   watchlists Watchlist[]
 }
@@ -22,9 +22,7 @@ model User {
 model Portfolio {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @db.Uuid
-  name      String
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   holdings  Holding[]
 
@@ -36,11 +34,9 @@ model Holding {
   id              String    @id @default(uuid()) @db.Uuid
   portfolioId     String    @db.Uuid
   coinId          String
-  symbol          String
   quantity        Decimal   @db.Decimal(36, 18)
   averageBuyPrice Decimal?  @db.Decimal(36, 18)
   createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
   portfolio       Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
   @@unique([portfolioId, coinId])
@@ -51,9 +47,7 @@ model Holding {
 model Watchlist {
   id        String          @id @default(uuid()) @db.Uuid
   userId    String          @db.Uuid
-  name      String          @default("Watchlist")
   createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
   user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   coins     WatchlistCoin[]
 
@@ -65,7 +59,6 @@ model WatchlistCoin {
   id          String    @id @default(uuid()) @db.Uuid
   watchlistId String    @db.Uuid
   coinId      String
-  symbol      String
   addedAt     DateTime  @default(now())
   watchlist   Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
 
