@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     change7d: { input: filtersForm.elements.change7d, coinKey: 'price_change_percentage_7d_in_currency' },
   };
   const sortFields = {
+    Coin: 'name',
     'Current Price (USD)': 'current_price',
     '24h Change (%)': 'price_change_percentage_24h',
     '7d Change (%)': 'price_change_percentage_7d_in_currency',
@@ -175,6 +176,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!currentSort.key) return coins;
 
     return [...coins].sort((firstCoin, secondCoin) => {
+      // Coin names are alphabetic; all other supported fields are numeric market values.
+      if (currentSort.key === 'name') {
+        const comparison = (firstCoin.name || '').localeCompare(secondCoin.name || '', undefined, {
+          sensitivity: 'base',
+        });
+        return currentSort.direction === 'asc' ? comparison : -comparison;
+      }
+
       const firstValue = Number(firstCoin[currentSort.key]);
       const secondValue = Number(secondCoin[currentSort.key]);
       const normalizedFirstValue = Number.isFinite(firstValue) ? firstValue : -Infinity;
