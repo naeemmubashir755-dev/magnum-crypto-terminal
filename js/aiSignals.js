@@ -4,41 +4,56 @@
  * It intentionally makes no network requests and does not depend on third-party libraries.
  */
 (function () {
+  const indicatorWeights = {
+    rsi: 0.2,
+    macd: 0.3,
+    ema: 0.25,
+    volume: 0.1,
+    supportResistance: 0.15,
+  };
+  const indicatorLabels = {
+    rsi: 'RSI',
+    macd: 'MACD',
+    ema: 'EMA',
+    volume: 'Volume Trend',
+    supportResistance: 'Support/Resistance',
+  };
+
   const toFiniteNumber = (value) => {
     const numericValue = Number(value);
     return Number.isFinite(numericValue) ? numericValue : null;
   };
 
   const evaluateRsi = (rsi) => {
-    if (rsi === null) return { score: 0, reason: 'RSI is unavailable.' };
-    if (rsi <= 30) return { score: 2, reason: 'RSI is oversold.' };
-    if (rsi < 45) return { score: 1, reason: 'RSI is recovering.' };
-    if (rsi >= 70) return { score: -2, reason: 'RSI is overbought.' };
-    if (rsi > 55) return { score: -1, reason: 'RSI is weakening.' };
-    return { score: 0, reason: 'RSI is neutral.' };
+    if (rsi === null) return { score: 0, maxScore: 2, available: false, reason: 'RSI is unavailable.' };
+    if (rsi <= 30) return { score: 2, maxScore: 2, available: true, reason: 'RSI is oversold.' };
+    if (rsi < 45) return { score: 1, maxScore: 2, available: true, reason: 'RSI is recovering.' };
+    if (rsi >= 70) return { score: -2, maxScore: 2, available: true, reason: 'RSI is overbought.' };
+    if (rsi > 55) return { score: -1, maxScore: 2, available: true, reason: 'RSI is weakening.' };
+    return { score: 0, maxScore: 2, available: true, reason: 'RSI is neutral.' };
   };
 
   const evaluateMacd = (macd) => {
     const line = toFiniteNumber(macd?.line ?? macd?.macdLine ?? macd);
     const signal = toFiniteNumber(macd?.signal ?? macd?.signalLine);
-    if (line === null || signal === null) return { score: 0, reason: 'MACD is unavailable.' };
+    if (line === null || signal === null) return { score: 0, maxScore: 2, available: false, reason: 'MACD is unavailable.' };
 
     const previousLine = toFiniteNumber(macd?.previousLine ?? macd?.previousMacdLine);
     const previousSignal = toFiniteNumber(macd?.previousSignal ?? macd?.previousSignalLine);
     if (previousLine !== null && previousSignal !== null && previousLine <= previousSignal && line > signal) {
-      return { score: 2, reason: 'MACD shows a bullish crossover.' };
+      return { score: 2, maxScore: 2, available: true, reason: 'MACD shows a bullish crossover.' };
     }
     if (previousLine !== null && previousSignal !== null && previousLine >= previousSignal && line < signal) {
-      return { score: -2, reason: 'MACD shows a bearish crossover.' };
+      return { score: -2, maxScore: 2, available: true, reason: 'MACD shows a bearish crossover.' };
     }
     return line > signal
-      ? { score: 1, reason: 'MACD is above its signal line.' }
-      : { score: -1, reason: 'MACD is below its signal line.' };
+      ? { score: 1, maxScore: 2, available: true, reason: 'MACD is above its signal line.' }
+      : { score: -1, maxScore: 2, available: true, reason: 'MACD is below its signal line.' };
   };
 
   const evaluateMovingAverages = (ema20, ema50, currentPrice) => {
     if (ema20 === null || ema50 === null) {
-      return { score: 0, reason: 'EMA crossover data is unavailable.' };
+      return { score: 0, maxScore: 3, available: false, reason: 'EMA crossover data is unavailable.' };
     }
 
     let score = ema20 > ema50 ? 2 : -2;
@@ -52,19 +67,38 @@
         reasons.push('Price is below both moving averages.');
       }
     }
-    return { score, reason: reasons.join(' ') };
+    return { score, maxScore: 3, available: true, reason: reasons.join(' ') };
   };
 
   const evaluateVolumeTrend = (volumeTrend) => {
     const trend = String(volumeTrend?.label ?? volumeTrend ?? '').toLowerCase();
     if (trend.includes('rising') || trend.includes('increasing')) {
-      return { score: 1, reason: 'Volume is increasing.' };
+      return { score: 1, maxScore: 1, available: true, reason: 'Volume is increasing.' };
     }
     if (trend.includes('falling') || trend.includes('decreasing')) {
-      return { score: -1, reason: 'Volume is decreasing.' };
+      return { score: -1, maxScore: 1, available: true, reason: 'Volume is decreasing.' };
     }
-    if (trend.includes('stable')) return { score: 0, reason: 'Volume is stable.' };
-    return { score: 0, reason: 'Volume trend is unavailable.' };
+    if (trend.includes('stable')) return { score: 0, maxScore: 1, available: true, reason: 'Volume is stable.' };
+    return { score: 0, maxScore: 1, available: false, reason: 'Volume trend is unavailable.' };
+  };
+
+  const evaluateSupportResistance = (levels, currentPrice) => {
+    const price = toFiniteNumber(currentPrice);
+    const support = toFiniteNumber(levels?.primarySupport);
+    const resistance = toFiniteNumber(levels?.primaryResistance);
+    if (price === null || (support === null && resistance === null)) {
+      return { score: 0, maxScore: 1, available: false, reason: 'Support and resistance data is unavailable.' };
+    }
+
+    const supportDistance = support === null ? Infinity : Math.abs(price - support) / price;
+    const resistanceDistance = resistance === null ? Infinity : Math.abs(resistance - price) / price;
+    if (supportDistance <= 0.03 && supportDistance < resistanceDistance) {
+      return { score: 1, maxScore: 1, available: true, reason: 'Price is testing nearby support.' };
+    }
+    if (resistanceDistance <= 0.03) {
+      return { score: -1, maxScore: 1, available: true, reason: 'Price is testing nearby resistance.' };
+    }
+    return { score: 0, maxScore: 1, available: true, reason: 'Price is between key support and resistance levels.' };
   };
 
   const getSignal = (score) => {
@@ -75,9 +109,28 @@
     return 'Hold';
   };
 
-  const getConfidence = (score, maxScore) => {
-    const normalizedStrength = Math.min(1, Math.abs(score) / maxScore);
-    return Math.round(35 + (normalizedStrength * 65));
+  // Weight conviction by the available indicators, then expose the largest contributors.
+  const getWeightedConfidence = (evaluations) => {
+    const availableWeight = evaluations.reduce(
+      (total, { key, evaluation }) => total + (evaluation.available ? indicatorWeights[key] : 0),
+      0,
+    );
+    if (!availableWeight) return { confidence: 0, contributors: [] };
+
+    const contributors = evaluations.map(({ key, evaluation }) => ({
+      key,
+      weight: indicatorWeights[key],
+      contribution: evaluation.available ? Math.abs(evaluation.score / evaluation.maxScore) * indicatorWeights[key] : 0,
+      reason: evaluation.reason,
+    })).sort((first, second) => second.contribution - first.contribution);
+    const strength = contributors.reduce((total, item) => total + item.contribution, 0) / availableWeight;
+    const coverage = availableWeight;
+    const confidence = Math.round(Math.min(100, ((strength * 0.75) + (coverage * 0.25)) * 100));
+
+    return {
+      confidence,
+      contributors: contributors.filter((item) => item.contribution > 0).slice(0, 3),
+    };
   };
 
   /**
@@ -90,25 +143,34 @@
    * @param {number} indicators.ema50
    * @param {number} indicators.currentPrice
    * @param {Object|string} indicators.volumeTrend - e.g. { label: 'volume rising' }
-   * @returns {{signal: string, confidence: number, reasons: string[]}}
+   * @param {{primarySupport?: number, primaryResistance?: number}} indicators.supportResistance
+   * @returns {{signal: string, confidence: number, reasons: string[], confidenceFactors: string[]}}
    */
   const analyzeTechnicalSignals = (indicators = {}) => {
     const evaluations = [
-      evaluateRsi(toFiniteNumber(indicators.rsi)),
-      evaluateMacd(indicators.macd),
-      evaluateMovingAverages(
+      { key: 'rsi', evaluation: evaluateRsi(toFiniteNumber(indicators.rsi)) },
+      { key: 'macd', evaluation: evaluateMacd(indicators.macd) },
+      { key: 'ema', evaluation: evaluateMovingAverages(
         toFiniteNumber(indicators.ema20),
         toFiniteNumber(indicators.ema50),
         toFiniteNumber(indicators.currentPrice),
-      ),
-      evaluateVolumeTrend(indicators.volumeTrend),
+      ) },
+      { key: 'volume', evaluation: evaluateVolumeTrend(indicators.volumeTrend) },
+      { key: 'supportResistance', evaluation: evaluateSupportResistance(
+        indicators.supportResistance,
+        indicators.currentPrice,
+      ) },
     ];
-    const score = evaluations.reduce((total, evaluation) => total + evaluation.score, 0);
+    const score = evaluations.reduce((total, { evaluation }) => total + evaluation.score, 0);
+    const confidenceDetails = getWeightedConfidence(evaluations);
 
     return {
       signal: getSignal(score),
-      confidence: getConfidence(score, 8),
-      reasons: evaluations.map((evaluation) => evaluation.reason),
+      confidence: confidenceDetails.confidence,
+      reasons: evaluations
+        .filter(({ key, evaluation }) => evaluation.available || key !== 'supportResistance')
+        .map(({ evaluation }) => evaluation.reason),
+      confidenceFactors: confidenceDetails.contributors.map(({ key, reason }) => `${indicatorLabels[key]}: ${reason}`),
     };
   };
 

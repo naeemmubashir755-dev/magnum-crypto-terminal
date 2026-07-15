@@ -618,6 +618,7 @@ const updateAiTradingAnalysis = (prices, volumes) => {
   const ema20 = getLastFiniteValue(calculateEma(validPrices, 20));
   const ema50 = getLastFiniteValue(calculateEma(validPrices, 50));
   const volumeTrend = getVolumeTrend(volumes);
+  const supportResistance = window.detectSupportResistance?.(validPrices);
   const analysis = window.analyzeTechnicalSignals({
     rsi,
     macd: {
@@ -630,6 +631,7 @@ const updateAiTradingAnalysis = (prices, volumes) => {
     ema50,
     currentPrice: validPrices.at(-1),
     volumeTrend,
+    supportResistance,
   });
 
   const badgeClass = analysis.signal.includes('Buy')
