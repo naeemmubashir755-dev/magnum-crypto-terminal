@@ -17,6 +17,7 @@
   <!-- Chart.js for coin price charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <script src="js/aiSignals.js" defer></script>
   <script src="js/coin.js" defer></script>
 </head>
   <body>
@@ -162,6 +163,37 @@
           <article class="stat-card" role="listitem">
             <h3>Reasoning</h3>
             <p id="trading-signal-reasoning">Waiting for historical data.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Reusable AI Signals Module Output -->
+      <section aria-labelledby="ai-trading-analysis-title" class="stats-section" style="margin-bottom: 2rem;">
+        <h2 id="ai-trading-analysis-title">AI Trading Analysis</h2>
+        <div class="stats-grid" role="list">
+          <article class="stat-card" role="listitem">
+            <h3>Signal</h3>
+            <p id="ai-analysis-signal">Loading...</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Confidence</h3>
+            <p id="ai-analysis-confidence">--</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Market Trend</h3>
+            <p id="ai-analysis-trend">--</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Momentum</h3>
+            <p id="ai-analysis-momentum">--</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Risk Level</h3>
+            <p id="ai-analysis-risk">--</p>
+          </article>
+          <article class="stat-card ai-analysis-reasoning" role="listitem">
+            <h3>Reasoning</h3>
+            <ul id="ai-analysis-reasoning"><li>Waiting for historical data.</li></ul>
           </article>
         </div>
       </section>

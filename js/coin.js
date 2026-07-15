@@ -554,6 +554,95 @@ const updateTradingSignalDisplay = (prices, volumes) => {
   reasoningElement.textContent = signal.reasoning;
 };
 
+const getLatestMacdPair = (macd) => {
+  let latest = null;
+  let previous = null;
+  for (let index = macd.macdLine.length - 1; index >= 0; index -= 1) {
+    const line = macd.macdLine[index];
+    const signal = macd.signalLine[index];
+    if (!Number.isFinite(line) || !Number.isFinite(signal)) continue;
+    if (!latest) latest = { line, signal };
+    else {
+      previous = { line, signal };
+      break;
+    }
+  }
+  return { latest, previous };
+};
+
+const getMarketTrendLabel = (prices) => {
+  const validPrices = prices.map(Number).filter(Number.isFinite);
+  if (validPrices.length < 2) return 'Unavailable';
+  const change = ((validPrices.at(-1) - validPrices[0]) / validPrices[0]) * 100;
+  if (change > 2) return `Uptrend (+${change.toFixed(2)}%)`;
+  if (change < -2) return `Downtrend (${change.toFixed(2)}%)`;
+  return `Sideways (${change >= 0 ? '+' : ''}${change.toFixed(2)}%)`;
+};
+
+// Render the reusable aiSignals.js result and supporting technical context in the analysis panel.
+const updateAiTradingAnalysis = (prices, volumes) => {
+  const elements = {
+    signal: document.getElementById('ai-analysis-signal'),
+    confidence: document.getElementById('ai-analysis-confidence'),
+    trend: document.getElementById('ai-analysis-trend'),
+    momentum: document.getElementById('ai-analysis-momentum'),
+    risk: document.getElementById('ai-analysis-risk'),
+    reasoning: document.getElementById('ai-analysis-reasoning'),
+  };
+  if (!Object.values(elements).every(Boolean)) return;
+
+  const validPrices = prices.map(Number).filter(Number.isFinite);
+  if (!window.analyzeTechnicalSignals || validPrices.length < 2) {
+    elements.signal.textContent = 'Unavailable';
+    elements.signal.className = '';
+    elements.confidence.textContent = '--';
+    elements.trend.textContent = 'Unavailable';
+    elements.momentum.textContent = 'Unavailable';
+    elements.risk.textContent = 'Unavailable';
+    elements.reasoning.replaceChildren(Object.assign(document.createElement('li'), { textContent: 'Insufficient indicator data.' }));
+    return;
+  }
+
+  const rsi = calculateRsi(validPrices);
+  const macd = calculateMacd(validPrices);
+  const macdPair = getLatestMacdPair(macd);
+  const ema20 = getLastFiniteValue(calculateEma(validPrices, 20));
+  const ema50 = getLastFiniteValue(calculateEma(validPrices, 50));
+  const volumeTrend = getVolumeTrend(volumes);
+  const analysis = window.analyzeTechnicalSignals({
+    rsi,
+    macd: {
+      line: macdPair.latest?.line,
+      signal: macdPair.latest?.signal,
+      previousLine: macdPair.previous?.line,
+      previousSignal: macdPair.previous?.signal,
+    },
+    ema20,
+    ema50,
+    currentPrice: validPrices.at(-1),
+    volumeTrend,
+  });
+
+  const badgeClass = analysis.signal.includes('Buy')
+    ? 'ai-signal-buy'
+    : analysis.signal.includes('Sell') ? 'ai-signal-sell' : 'ai-signal-hold';
+  elements.signal.textContent = analysis.signal;
+  elements.signal.className = `ai-signal-badge ${badgeClass}`;
+  elements.confidence.textContent = `${analysis.confidence}%`;
+  elements.trend.textContent = getMarketTrendLabel(validPrices);
+  elements.momentum.textContent = Number.isFinite(macdPair.latest?.line) && Number.isFinite(macdPair.latest?.signal)
+    ? (macdPair.latest.line > macdPair.latest.signal ? 'Bullish' : 'Bearish')
+    : 'Unavailable';
+  elements.risk.textContent = Number.isFinite(rsi) && (rsi > 70 || rsi < 30) ? 'Elevated' : 'Moderate';
+  const reasons = document.createDocumentFragment();
+  analysis.reasons.forEach((reason) => {
+    const item = document.createElement('li');
+    item.textContent = reason;
+    reasons.appendChild(item);
+  });
+  elements.reasoning.replaceChildren(reasons);
+};
+
 const updateAiSummary = (prices, volumes) => {
   const elements = {
     trend: document.getElementById('ai-summary-trend'),
@@ -947,6 +1036,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     updateRsiDisplay(prices);
     updateAiSummary(prices, volumes);
     updateTradingSignalDisplay(prices, volumes);
+    updateAiTradingAnalysis(prices, volumes);
   } catch (historyError) {
     console.error('Could not load coin history:', historyError);
     showChartStatus('We could not load the chart data right now. Please try again.', 'error');
@@ -954,6 +1044,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     updateVolumeStatistics([]);
     updateAiSummary([], []);
     updateTradingSignalDisplay([], []);
+    updateAiTradingAnalysis([], []);
   }
 };
 
