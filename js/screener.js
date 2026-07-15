@@ -10,10 +10,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const loadScreenerButton = document.getElementById('load-screener');
   const renameScreenerButton = document.getElementById('rename-screener');
   const deleteScreenerButton = document.getElementById('delete-screener');
+  const retryButton = document.getElementById('retry-screener');
 
   if (!table || !tableBody || !status || !filtersForm || !saveForm || !nameInput
     || !savedScreenerSelect || !savedScreenerStatus || !loadScreenerButton
-    || !renameScreenerButton || !deleteScreenerButton) return;
+    || !renameScreenerButton || !deleteScreenerButton || !retryButton) return;
 
   const savedScreenersStorageKey = 'crypto-terminal-saved-screeners';
 
@@ -25,11 +26,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     change7d: { input: filtersForm.elements.change7d, coinKey: 'price_change_percentage_7d_in_currency' },
   };
   const sortFields = {
-    Price: 'current_price',
-    '24h Change': 'price_change_percentage_24h',
-    '7d Change': 'price_change_percentage_7d_in_currency',
+    'Current Price (USD)': 'current_price',
+    '24h Change (%)': 'price_change_percentage_24h',
+    '7d Change (%)': 'price_change_percentage_7d_in_currency',
     'Market Cap': 'market_cap',
-    Volume: 'total_volume',
+    'Total Volume': 'total_volume',
   };
   let allCoins = [];
   let currentSort = { key: null, direction: 'asc' };
@@ -228,6 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateSortControls();
     status.classList.remove('error');
     status.textContent = `${filteredCoins.length} ${filteredCoins.length === 1 ? 'cryptocurrency' : 'cryptocurrencies'} match your filters.`;
+    retryButton.hidden = true;
   };
 
   // Saved screeners contain the current filter values and selected sort order only.
@@ -304,6 +306,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   const showError = (message) => {
     status.classList.add('error');
     status.textContent = message;
+    retryButton.hidden = false;
+  };
+
+  const showLoading = () => {
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner';
+    spinner.setAttribute('aria-hidden', 'true');
+    status.classList.remove('error');
+    status.replaceChildren(spinner, document.createTextNode('Loading market data...'));
+    retryButton.hidden = true;
+  };
+
+  // Use the shared helper for the initial load and any user-requested retry.
+  const loadMarketData = async () => {
+    showLoading();
+    retryButton.disabled = true;
+    try {
+      allCoins = await window.fetchMarketData(100);
+      updateScreener();
+    } catch (error) {
+      console.error('Unable to load screener market data:', error);
+      showError(error.message || 'Market data is currently unavailable. Please try again later.');
+    } finally {
+      retryButton.disabled = false;
+    }
   };
 
   // Recalculate results on every keystroke for immediate, client-side filtering.
@@ -326,14 +353,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
   renameScreenerButton.addEventListener('click', renameSelectedScreener);
   deleteScreenerButton.addEventListener('click', deleteSelectedScreener);
+  retryButton.addEventListener('click', loadMarketData);
   initializeSortControls();
   renderSavedScreenerOptions(readSavedScreeners());
-
-  try {
-    allCoins = await window.fetchMarketData(100);
-    updateScreener();
-  } catch (error) {
-    console.error('Unable to load screener market data:', error);
-    showError(error.message || 'Market data is currently unavailable. Please try again later.');
-  }
+  loadMarketData();
 });
