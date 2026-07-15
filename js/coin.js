@@ -80,16 +80,24 @@ const calculateSma = (prices, period) => prices.map((_, index) => {
 });
 
 // Return an aligned exponential moving average series using the standard EMA multiplier.
-const calculateEma = (prices, period) => {
-  const values = prices.map(Number);
+const calculateEmaSeries = (series, period) => {
+  const values = series.map((value) => {
+    if (value === null || value === undefined || value === '') return null;
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? numericValue : null;
+  });
   const averages = Array(values.length).fill(null);
-  if (values.length < period || !values.slice(0, period).every(Number.isFinite)) return averages;
+  const firstValueIndex = values.findIndex(Number.isFinite);
+  if (firstValueIndex === -1) return averages;
+
+  const seedValues = values.slice(firstValueIndex, firstValueIndex + period);
+  if (seedValues.length < period || !seedValues.every(Number.isFinite)) return averages;
 
   const multiplier = 2 / (period + 1);
-  let previousAverage = values.slice(0, period).reduce((sum, value) => sum + value, 0) / period;
-  averages[period - 1] = previousAverage;
+  let previousAverage = seedValues.reduce((sum, value) => sum + value, 0) / period;
+  averages[firstValueIndex + period - 1] = previousAverage;
 
-  for (let index = period; index < values.length; index += 1) {
+  for (let index = firstValueIndex + period; index < values.length; index += 1) {
     if (!Number.isFinite(values[index])) continue;
     previousAverage = ((values[index] - previousAverage) * multiplier) + previousAverage;
     averages[index] = previousAverage;
@@ -97,6 +105,8 @@ const calculateEma = (prices, period) => {
 
   return averages;
 };
+
+const calculateEma = (prices, period) => calculateEmaSeries(prices, period);
 
 const createMovingAverageDatasets = (prices) => [
   {
@@ -142,6 +152,116 @@ const createPriceChartDatasets = (prices) => [
   },
   ...createMovingAverageDatasets(prices),
 ];
+
+// Standard MACD uses 12- and 26-period EMAs, with a 9-period signal EMA.
+const calculateMacd = (prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) => {
+  const fastEma = calculateEma(prices, fastPeriod);
+  const slowEma = calculateEma(prices, slowPeriod);
+  const macdLine = prices.map((_, index) => (
+    Number.isFinite(fastEma[index]) && Number.isFinite(slowEma[index])
+      ? fastEma[index] - slowEma[index]
+      : null
+  ));
+  const signalLine = calculateEmaSeries(macdLine, signalPeriod);
+  const histogram = macdLine.map((value, index) => (
+    Number.isFinite(value) && Number.isFinite(signalLine[index])
+      ? value - signalLine[index]
+      : null
+  ));
+
+  return { macdLine, signalLine, histogram };
+};
+
+const getMacdChartContainer = () => {
+  let container = document.getElementById('macd-chart');
+  if (container) return container;
+
+  const priceChartSection = document.getElementById('chart-section');
+  if (!priceChartSection) return null;
+
+  const section = document.createElement('section');
+  section.id = 'macd-section';
+  section.setAttribute('aria-labelledby', 'macd-title');
+  section.style.marginBottom = '2rem';
+  section.innerHTML = '<h2 id="macd-title">MACD</h2>';
+
+  container = document.createElement('div');
+  container.id = 'macd-chart';
+  container.style.minHeight = '250px';
+  container.style.position = 'relative';
+  section.appendChild(container);
+  priceChartSection.insertAdjacentElement('afterend', section);
+  return container;
+};
+
+const createMacdDatasets = (macd) => [
+  {
+    type: 'bar',
+    label: 'Histogram',
+    data: macd.histogram,
+    backgroundColor: (context) => (
+      context.raw >= 0 ? 'rgba(16, 185, 129, 0.55)' : 'rgba(239, 68, 68, 0.55)'
+    ),
+    borderWidth: 0,
+  },
+  {
+    type: 'line',
+    label: 'MACD Line',
+    data: macd.macdLine,
+    borderColor: '#3b82f6',
+    borderWidth: 2,
+    pointRadius: 0,
+    tension: 0.25,
+  },
+  {
+    type: 'line',
+    label: 'Signal Line',
+    data: macd.signalLine,
+    borderColor: '#f59e0b',
+    borderWidth: 2,
+    pointRadius: 0,
+    tension: 0.25,
+  },
+];
+
+const renderMacdChart = (labels, prices) => {
+  const chartContainer = getMacdChartContainer();
+  if (!chartContainer || !labels?.length || !prices?.length || typeof window.Chart === 'undefined') return;
+
+  let canvas = chartContainer.querySelector('canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-label', 'MACD indicator chart');
+    chartContainer.appendChild(canvas);
+  }
+
+  const macd = calculateMacd(prices);
+  if (!window.macdChartInstance) {
+    window.macdChartInstance = new window.Chart(canvas.getContext('2d'), {
+      data: {
+        labels,
+        datasets: createMacdDatasets(macd),
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: { enabled: true },
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: 'rgba(148, 163, 184, 0.2)' } },
+        },
+      },
+    });
+  } else {
+    window.macdChartInstance.data.labels = labels;
+    window.macdChartInstance.data.datasets = createMacdDatasets(macd);
+    window.macdChartInstance.update('active');
+  }
+};
 
 const showChartStatus = (message, type = 'loading') => {
   const chartContainer = document.getElementById('price-chart');
@@ -355,6 +475,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     }
 
     renderPriceChart(labels, prices);
+    renderMacdChart(labels, prices);
     updateRsiDisplay(prices);
   } catch (historyError) {
     console.error('Could not load coin history:', historyError);
