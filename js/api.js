@@ -8,7 +8,8 @@
     url.searchParams.set('order', 'market_cap_desc');
     url.searchParams.set('per_page', String(limit));
     url.searchParams.set('page', '1');
-    url.searchParams.set('price_change_percentage', '24h');
+    // Request both percentage windows so market views can show daily and weekly movement.
+    url.searchParams.set('price_change_percentage', '24h,7d');
     url.searchParams.set('sparkline', 'false');
 
     const response = await fetch(url.toString(), {

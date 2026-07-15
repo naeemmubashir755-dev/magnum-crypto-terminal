@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crypto Screener | Crypto Terminal</title>
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/screener.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="screener.html" aria-current="page">Screener</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+          <li><a href="login.html">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+        </ul>
+        <button type="button" id="theme-toggle" class="btn-secondary">Dark mode</button>
+      </nav>
+    </header>
+
+    <aside aria-label="Sidebar navigation">
+      <nav>
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="screener.html" aria-current="page">Screener</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+          <li><a href="login.html">Login</a></li>
+          <li><a href="register.html">Register</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section aria-labelledby="screener-title">
+        <h1 id="screener-title">Crypto Screener</h1>
+        <p>Monitor the top 100 cryptocurrencies by market capitalization.</p>
+      </section>
+
+      <section aria-labelledby="screener-table-title">
+        <h2 id="screener-table-title">Top 100 Cryptocurrencies</h2>
+        <div id="screener-status" class="table-status" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Loading market data...</span>
+        </div>
+
+        <div class="screener-table-wrapper" tabindex="0">
+          <table id="screener-table" aria-describedby="screener-status" hidden>
+            <thead>
+              <tr>
+                <th scope="col">Logo</th>
+                <th scope="col">Coin</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Price</th>
+                <th scope="col">24h Change</th>
+                <th scope="col">7d Change</th>
+                <th scope="col">Market Cap</th>
+                <th scope="col">Volume</th>
+              </tr>
+            </thead>
+            <tbody id="screener-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

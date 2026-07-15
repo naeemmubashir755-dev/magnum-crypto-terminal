@@ -581,6 +581,29 @@ textarea:focus {
   padding: 0.1rem;
 }
 
+.screener-table-wrapper {
+  margin-top: 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+}
+
+.screener-table-wrapper:focus {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+#screener-table {
+  min-width: 52rem;
+  margin-top: 0;
+}
+
+#screener-table td:nth-child(n + 4),
+#screener-table th:nth-child(n + 4) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
