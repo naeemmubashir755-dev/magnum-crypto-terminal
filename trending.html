@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trending Coins | Crypto Terminal</title>
+    <link rel="stylesheet" href="css/variables.css" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+    <script src="js/navigation.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/trending.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <nav aria-label="Primary navigation">
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="screener.html">Screener</a></li>
+          <li><a href="heatmap.html">Heatmap</a></li>
+          <li><a href="trending.html" aria-current="page">Trending</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+        </ul>
+        <button type="button" id="theme-toggle" class="btn-secondary">Dark mode</button>
+      </nav>
+    </header>
+
+    <aside aria-label="Sidebar navigation">
+      <nav>
+        <ul>
+          <li><a href="index.html">Dashboard</a></li>
+          <li><a href="markets.html">Markets</a></li>
+          <li><a href="screener.html">Screener</a></li>
+          <li><a href="heatmap.html">Heatmap</a></li>
+          <li><a href="trending.html" aria-current="page">Trending</a></li>
+          <li><a href="portfolio.html">Portfolio</a></li>
+          <li><a href="watchlist.html">Watchlist</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <main>
+      <section aria-labelledby="trending-title">
+        <h1 id="trending-title">Trending Coins</h1>
+        <p>Explore CoinGecko discovery data and the latest market movement.</p>
+      </section>
+
+      <section class="discovery-grid" aria-label="Coin discovery lists">
+        <article class="discovery-card">
+          <h2>Trending Coins</h2>
+          <div id="trending-status" class="table-status" role="status" aria-live="polite">Loading trending coins...</div>
+          <ul id="trending-list" class="discovery-list"></ul>
+        </article>
+        <article class="discovery-card">
+          <h2>Recently Added Coins</h2>
+          <div id="recent-status" class="table-status" role="status" aria-live="polite">Loading recently added coins...</div>
+          <ul id="recent-list" class="discovery-list"></ul>
+        </article>
+        <article class="discovery-card">
+          <h2>Most Visited Coins</h2>
+          <div id="visited-status" class="table-status" role="status" aria-live="polite">Loading search popularity...</div>
+          <ul id="visited-list" class="discovery-list"></ul>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

@@ -25,6 +25,53 @@
     return response.json();
   }
 
+  // Fetch CoinGecko's search-popularity ranking for trending coins.
+  async function fetchTrendingCoins() {
+    const response = await fetch(`${BASE_URL}/search/trending`, {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error('We could not load trending coins right now. Please try again.');
+    }
+
+    return response.json();
+  }
+
+  // Fetch the latest assets activated on CoinGecko (availability depends on the API plan).
+  async function fetchRecentlyAddedCoins() {
+    const response = await fetch(`${BASE_URL}/coins/list/new`, {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error('Recently added coins are unavailable with the current CoinGecko API access.');
+    }
+
+    return response.json();
+  }
+
+  // Fetch market fields for a known set of CoinGecko ids, used to enrich discovery lists.
+  async function fetchMarketDataForIds(ids) {
+    if (!ids?.length) return [];
+
+    const url = new URL(`${BASE_URL}/coins/markets`);
+    url.searchParams.set('vs_currency', 'usd');
+    url.searchParams.set('ids', ids.join(','));
+    url.searchParams.set('price_change_percentage', '24h');
+    url.searchParams.set('sparkline', 'false');
+
+    const response = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+    });
+
+    if (!response.ok) {
+      throw new Error('We could not load market prices for these coins right now.');
+    }
+
+    return response.json();
+  }
+
   // Fetch detailed information for one cryptocurrency by its CoinGecko id.
   async function fetchCoinDetails(id) {
     const response = await fetch(`${BASE_URL}/coins/${id}`, {
@@ -60,6 +107,9 @@
   }
 
   window.fetchMarketData = fetchMarketData;
+  window.fetchTrendingCoins = fetchTrendingCoins;
+  window.fetchRecentlyAddedCoins = fetchRecentlyAddedCoins;
+  window.fetchMarketDataForIds = fetchMarketDataForIds;
   window.fetchCoinDetails = fetchCoinDetails;
   window.fetchCoinHistory = fetchCoinHistory;
 })();

@@ -717,6 +717,59 @@ textarea:focus {
   font-variant-numeric: tabular-nums;
 }
 
+.discovery-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.discovery-card {
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  background: var(--surface-color);
+}
+
+.discovery-card h2 {
+  margin-top: 0;
+}
+
+.discovery-list {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 1rem 0 0;
+  list-style: none;
+}
+
+.discovery-coin-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.discovery-coin-link:hover,
+.discovery-coin-link:focus-visible {
+  background: var(--secondary-color);
+  color: var(--accent-color);
+}
+
+.discovery-coin-link > :last-child {
+  grid-column: 3;
+  font-size: 0.85rem;
+}
+
+.discovery-coin-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 768px) {
   .crypto-heatmap {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -729,6 +782,10 @@ textarea:focus {
   }
 
   .market-movers-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .discovery-grid {
     grid-template-columns: 1fr;
   }
 }
