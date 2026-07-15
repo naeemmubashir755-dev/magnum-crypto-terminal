@@ -139,6 +139,68 @@ const createMovingAverageDatasets = (prices) => [
   spanGaps: false,
 }));
 
+// Bollinger Bands use a 20-period SMA with upper and lower bands at two deviations.
+const calculateBollingerBands = (prices, period = 20, multiplier = 2) => {
+  const middleBand = calculateSma(prices, period);
+  const upperBand = Array(prices.length).fill(null);
+  const lowerBand = Array(prices.length).fill(null);
+
+  for (let index = period - 1; index < prices.length; index += 1) {
+    const windowPrices = prices.slice(index - period + 1, index + 1).map(Number);
+    if (!windowPrices.every(Number.isFinite)) continue;
+
+    const mean = middleBand[index];
+    const variance = windowPrices.reduce(
+      (sum, price) => sum + ((price - mean) ** 2),
+      0,
+    ) / period;
+    const standardDeviation = Math.sqrt(variance);
+    upperBand[index] = mean + (standardDeviation * multiplier);
+    lowerBand[index] = mean - (standardDeviation * multiplier);
+  }
+
+  return { upperBand, middleBand, lowerBand };
+};
+
+const createBollingerBandDatasets = (prices) => {
+  const bands = calculateBollingerBands(prices);
+  const sharedOptions = {
+    borderColor: '#64748b',
+    borderWidth: 1.25,
+    borderDash: [5, 4],
+    pointRadius: 0,
+    tension: 0.25,
+    spanGaps: false,
+  };
+
+  return [
+    {
+      ...sharedOptions,
+      label: 'Bollinger Upper (20, 2)',
+      data: bands.upperBand,
+      fill: '+1',
+      backgroundColor: 'rgba(100, 116, 139, 0.12)',
+    },
+    {
+      ...sharedOptions,
+      label: 'Bollinger Lower (20, 2)',
+      data: bands.lowerBand,
+      fill: false,
+      backgroundColor: 'transparent',
+    },
+    {
+      label: 'Bollinger Middle (20)',
+      data: bands.middleBand,
+      borderColor: '#64748b',
+      borderWidth: 1,
+      pointRadius: 0,
+      fill: false,
+      tension: 0.25,
+      spanGaps: false,
+    },
+  ];
+};
+
 const createPriceChartDatasets = (prices) => [
   {
     label: 'Price (USD)',
@@ -151,6 +213,7 @@ const createPriceChartDatasets = (prices) => [
     tension: 0.35,
   },
   ...createMovingAverageDatasets(prices),
+  ...createBollingerBandDatasets(prices),
 ];
 
 // Standard MACD uses 12- and 26-period EMAs, with a 9-period signal EMA.
