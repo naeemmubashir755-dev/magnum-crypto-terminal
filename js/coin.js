@@ -9,8 +9,9 @@ const formatHistoryForChart = (history) => {
   );
 
   const prices = rawPrices.map(([, price]) => price);
+  const volumes = (history?.total_volumes ?? []).map(([, volume]) => volume);
 
-  return { labels, prices };
+  return { labels, prices, volumes };
 };
 
 // Calculate the 14-period RSI with Wilder's smoothed average gain and loss method.
@@ -233,6 +234,94 @@ const calculateMacd = (prices, fastPeriod = 12, slowPeriod = 26, signalPeriod = 
   ));
 
   return { macdLine, signalLine, histogram };
+};
+
+const getLastFiniteValue = (values) => [...values].reverse().find(Number.isFinite);
+
+const formatSummaryPrice = (value) => new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 2,
+}).format(value);
+
+const getVolumeTrend = (volumes, period = 20) => {
+  const validVolumes = volumes.map(Number).filter(Number.isFinite);
+  if (validVolumes.length < 2) return { label: 'volume unavailable', change: null };
+
+  const comparisonLength = Math.min(period, Math.floor(validVolumes.length / 2));
+  if (!comparisonLength) return { label: 'volume unavailable', change: null };
+
+  const latestAverage = validVolumes.slice(-comparisonLength)
+    .reduce((sum, volume) => sum + volume, 0) / comparisonLength;
+  const previousAverage = validVolumes.slice(-comparisonLength * 2, -comparisonLength)
+    .reduce((sum, volume) => sum + volume, 0) / comparisonLength;
+  if (previousAverage === 0) return { label: 'volume stable', change: 0 };
+
+  const change = ((latestAverage - previousAverage) / previousAverage) * 100;
+  if (change > 10) return { label: 'volume rising', change };
+  if (change < -10) return { label: 'volume falling', change };
+  return { label: 'volume stable', change };
+};
+
+const updateAiSummary = (prices, volumes) => {
+  const elements = {
+    trend: document.getElementById('ai-summary-trend'),
+    momentum: document.getElementById('ai-summary-momentum'),
+    risk: document.getElementById('ai-summary-risk'),
+    support: document.getElementById('ai-summary-support'),
+    resistance: document.getElementById('ai-summary-resistance'),
+  };
+  if (!Object.values(elements).every(Boolean)) return;
+
+  const validPrices = prices.map(Number).filter(Number.isFinite);
+  if (validPrices.length < 2) {
+    Object.values(elements).forEach((element) => { element.textContent = 'Insufficient data'; });
+    return;
+  }
+
+  const latestPrice = validPrices.at(-1);
+  const periodStartPrice = validPrices[0];
+  const priceChange = ((latestPrice - periodStartPrice) / periodStartPrice) * 100;
+  const trendLabel = priceChange > 2 ? 'Uptrend' : priceChange < -2 ? 'Downtrend' : 'Sideways';
+  const volumeTrend = getVolumeTrend(volumes);
+
+  const rsi = calculateRsi(validPrices);
+  const macd = calculateMacd(validPrices);
+  const latestMacd = getLastFiniteValue(macd.macdLine);
+  const latestSignal = getLastFiniteValue(macd.signalLine);
+  const ema20 = getLastFiniteValue(calculateEma(validPrices, 20));
+  const ema50 = getLastFiniteValue(calculateEma(validPrices, 50));
+  const bands = calculateBollingerBands(validPrices);
+  const upperBand = getLastFiniteValue(bands.upperBand);
+  const lowerBand = getLastFiniteValue(bands.lowerBand);
+  const supportResistanceWindow = validPrices.slice(-Math.min(20, validPrices.length));
+  const support = Math.min(...supportResistanceWindow);
+  const resistance = Math.max(...supportResistanceWindow);
+
+  elements.trend.textContent = `${trendLabel} (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%); ${volumeTrend.label}.`;
+
+  const macdLabel = Number.isFinite(latestMacd) && Number.isFinite(latestSignal)
+    ? (latestMacd >= latestSignal ? 'MACD above signal' : 'MACD below signal')
+    : 'MACD unavailable';
+  const averageLabel = Number.isFinite(ema20) && Number.isFinite(ema50)
+    ? (latestPrice >= ema20 && latestPrice >= ema50 ? 'price above EMA 20/50' : 'price below an EMA')
+    : 'moving averages unavailable';
+  elements.momentum.textContent = `${macdLabel}; ${averageLabel}.`;
+
+  if (Number.isFinite(rsi) && rsi >= 70) {
+    elements.risk.textContent = `Elevated — RSI ${rsi.toFixed(1)} is overbought.`;
+  } else if (Number.isFinite(rsi) && rsi <= 30) {
+    elements.risk.textContent = `Elevated — RSI ${rsi.toFixed(1)} is oversold.`;
+  } else if (Number.isFinite(upperBand) && latestPrice >= upperBand) {
+    elements.risk.textContent = 'Elevated — price is testing the upper Bollinger Band.';
+  } else if (Number.isFinite(lowerBand) && latestPrice <= lowerBand) {
+    elements.risk.textContent = 'Elevated — price is testing the lower Bollinger Band.';
+  } else {
+    elements.risk.textContent = 'Moderate — RSI and price remain within normal bands.';
+  }
+
+  elements.support.textContent = `${formatSummaryPrice(support)} (recent range low)`;
+  elements.resistance.textContent = `${formatSummaryPrice(resistance)} (recent range high)`;
 };
 
 const getMacdChartContainer = () => {
@@ -529,7 +618,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     const history = await window.fetchCoinHistory(coinId, days);
     console.log('Coin history response:', history);
 
-    const { labels, prices } = formatHistoryForChart(history);
+    const { labels, prices, volumes } = formatHistoryForChart(history);
     console.log('Labels:', labels);
     console.log('Prices:', prices);
 
@@ -540,10 +629,12 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     renderPriceChart(labels, prices);
     renderMacdChart(labels, prices);
     updateRsiDisplay(prices);
+    updateAiSummary(prices, volumes);
   } catch (historyError) {
     console.error('Could not load coin history:', historyError);
     showChartStatus('We could not load the chart data right now. Please try again.', 'error');
     updateRsiDisplay([]);
+    updateAiSummary([], []);
   }
 };
 
