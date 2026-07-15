@@ -643,6 +643,29 @@ const updateAiTradingAnalysis = (prices, volumes) => {
   elements.reasoning.replaceChildren(reasons);
 };
 
+// Populate the AI analysis support/resistance cards from the reusable detector module.
+const updateSupportResistanceDisplay = (prices) => {
+  const fields = {
+    primarySupport: document.getElementById('ai-primary-support'),
+    secondarySupport: document.getElementById('ai-secondary-support'),
+    primaryResistance: document.getElementById('ai-primary-resistance'),
+    secondaryResistance: document.getElementById('ai-secondary-resistance'),
+  };
+  if (!Object.values(fields).every(Boolean)) return;
+
+  const levels = window.detectSupportResistance?.(prices);
+  const formatLevel = (value) => Number.isFinite(value) ? formatSummaryPrice(value) : '--';
+  if (!levels) {
+    Object.values(fields).forEach((field) => { field.textContent = '--'; });
+    return;
+  }
+
+  fields.primarySupport.textContent = formatLevel(levels.primarySupport);
+  fields.secondarySupport.textContent = formatLevel(levels.secondarySupport);
+  fields.primaryResistance.textContent = formatLevel(levels.primaryResistance);
+  fields.secondaryResistance.textContent = formatLevel(levels.secondaryResistance);
+};
+
 const updateAiSummary = (prices, volumes) => {
   const elements = {
     trend: document.getElementById('ai-summary-trend'),
@@ -1037,6 +1060,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     updateAiSummary(prices, volumes);
     updateTradingSignalDisplay(prices, volumes);
     updateAiTradingAnalysis(prices, volumes);
+    updateSupportResistanceDisplay(prices);
   } catch (historyError) {
     console.error('Could not load coin history:', historyError);
     showChartStatus('We could not load the chart data right now. Please try again.', 'error');
@@ -1045,6 +1069,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     updateAiSummary([], []);
     updateTradingSignalDisplay([], []);
     updateAiTradingAnalysis([], []);
+    updateSupportResistanceDisplay([]);
   }
 };
 
