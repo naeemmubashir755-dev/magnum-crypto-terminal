@@ -16,10 +16,18 @@ class UserService {
       throw createHttpError(400, 'username, email, and passwordHash are required.');
     }
 
-    return prisma.user.create({
-      data: { username, email, passwordHash },
-      select: publicUserFields,
-    });
+    try {
+      return await prisma.user.create({
+        data: { username, email, passwordHash },
+        select: publicUserFields,
+      });
+    } catch (error) {
+      // Prisma's unique-constraint code covers concurrent registration attempts.
+      if (error.code === 'P2002') {
+        throw createHttpError(409, 'A user with that username or email already exists.');
+      }
+      throw error;
+    }
   }
 
   async getUserById(id) {

@@ -6,6 +6,7 @@ const marketRoutes = require('./routes/marketRoutes');
 const userRoutes = require('./routes/userRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const watchlistRoutes = require('./routes/watchlistRoutes');
+const authRoutes = require('./routes/authRoutes');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.json());
 
 app.use('/api', healthRoutes);
 app.use('/api', marketRoutes);
+app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', portfolioRoutes);
 app.use('/api', watchlistRoutes);
