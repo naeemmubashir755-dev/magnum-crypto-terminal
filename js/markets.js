@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const prevButton = document.getElementById('prev-page');
   const nextButton = document.getElementById('next-page');
   const pageIndicator = document.getElementById('page-indicator');
+  const tableStatus = document.getElementById('table-status');
   if (!tbody) return;
 
   const pageSize = 20;
@@ -103,19 +104,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   };
 
-  const updateVisibleCoins = (query = '') => {
+  const setTableStatus = (message) => {
+    if (tableStatus) tableStatus.textContent = message;
+  };
+
+  const updateVisibleCoins = (query = '', resetPage = true) => {
     const filteredCoins = sortCoins(getFilteredCoins(query));
-    currentPage = 1;
+    if (resetPage) currentPage = 1;
     renderCoins(filteredCoins);
     updateSortButtons();
+  };
+
+  const applyLiveMarketUpdate = (update) => {
+    if (!Array.isArray(update?.markets)) return;
+
+    allCoins = update.markets;
+    updateVisibleCoins(searchInput?.value || '', false);
+    setTableStatus(`Live market update received at ${new Date(update.updatedAt).toLocaleTimeString()}.`);
   };
 
   try {
     allCoins = await window.fetchMarketData(100);
     updateVisibleCoins('');
+    setTableStatus('Showing the latest market data.');
   } catch (error) {
     console.error(error);
+    setTableStatus('We could not load market data. Live updates will retry automatically.');
   }
+
+  const unsubscribe = window.marketSocket?.subscribe(applyLiveMarketUpdate);
+  window.addEventListener('market-socket-status', (event) => {
+    const { status, message } = event.detail || {};
+    if (status === 'error' || status === 'disconnected') setTableStatus(message);
+  });
+  window.addEventListener('pagehide', () => unsubscribe?.(), { once: true });
 
   if (searchInput) {
     searchInput.addEventListener('input', (event) => {

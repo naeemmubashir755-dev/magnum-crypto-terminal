@@ -1,12 +1,10 @@
 const STORAGE_KEY = 'crypto-watchlist';
-const REFRESH_INTERVAL_MS = 30000;
 
 const state = {
   coins: [],
   query: '',
   sortKey: 'name',
   sortDirection: 'asc',
-  refreshTimer: null,
 };
 
 const getWatchlist = () => {
@@ -243,14 +241,19 @@ const refreshWatchlistData = async () => {
   }
 };
 
-const startAutoRefresh = () => {
-  if (state.refreshTimer) {
-    return;
-  }
+const applyLiveMarketUpdate = (update) => {
+  if (!Array.isArray(update?.markets)) return;
 
-  state.refreshTimer = window.setInterval(() => {
-    refreshWatchlistData();
-  }, REFRESH_INTERVAL_MS);
+  const watchlist = getWatchlist();
+  if (!watchlist.length) return;
+
+  const marketsById = new Map(update.markets.map((coin) => [coin.id, coin]));
+  const currentCoinsById = new Map(state.coins.map((coin) => [coin.id, coin]));
+  const coins = [...new Set(watchlist)]
+    .map((coinId) => marketsById.get(coinId) || currentCoinsById.get(coinId) || null)
+    .filter(Boolean);
+
+  renderWatchlistRows(coins, state.query, state.sortKey, state.sortDirection);
 };
 
 const removeCoinFromWatchlist = (coinId) => {
@@ -280,7 +283,6 @@ const loadWatchlistData = async () => {
 
   try {
     await refreshWatchlistData();
-    startAutoRefresh();
   } catch (error) {
     console.error('Could not load watchlist data:', error);
     setStatusMessage('We could not load your watchlist right now.');
@@ -312,4 +314,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   loadWatchlistData();
+
+  const unsubscribe = window.marketSocket?.subscribe(applyLiveMarketUpdate);
+  window.addEventListener('market-socket-status', (event) => {
+    const { status, message } = event.detail || {};
+    if (status === 'error' || status === 'disconnected') {
+      setStatusMessage(`${message} Showing the last available prices.`);
+    }
+  });
+  window.addEventListener('pagehide', () => unsubscribe?.(), { once: true });
 });

@@ -467,6 +467,34 @@
     metric.classList.add(getProfitLossClass(profitLoss));
   };
 
+  // Re-render every price-dependent view from one consistent market snapshot.
+  const renderPortfolioFromPrices = (holdings, prices) => {
+    marketPriceState.prices = prices;
+    renderHoldings(holdings, prices);
+    renderPortfolioAllocation(holdings, prices);
+
+    const performance = calculatePortfolioPerformance(holdings, prices);
+    renderPortfolioSummary({
+      ...portfolioPlaceholder,
+      totalValue: performance ? formatCurrentValue(performance.totalValue) : '--',
+    });
+    renderOverallProfitLoss(performance);
+  };
+
+  const applyLiveMarketUpdate = (update) => {
+    if (!Array.isArray(update?.markets)) return;
+
+    const holdings = getSavedHoldings();
+    if (!holdings.length) return;
+
+    // Reuse the socket snapshot for subsequent local price lookups and retain
+    // previously fetched detail prices for holdings outside the top 100.
+    marketPriceState.marketDataRequest = Promise.resolve(update.markets);
+    const livePrices = createMarketPriceLookup(update.markets);
+    const prices = new Map([...marketPriceState.prices, ...livePrices]);
+    renderPortfolioFromPrices(holdings, prices);
+  };
+
   const refreshPortfolioValues = async () => {
     const refreshId = ++marketPriceState.refreshId;
     const holdings = getSavedHoldings();
@@ -488,17 +516,7 @@
       return;
     }
 
-    marketPriceState.prices = prices;
-    renderHoldings(holdings, prices);
-    renderPortfolioAllocation(holdings, prices);
-
-    // Recalculate summary performance from the same prices used for every table row.
-    const performance = calculatePortfolioPerformance(holdings, prices);
-    renderPortfolioSummary({
-      ...portfolioPlaceholder,
-      totalValue: performance ? formatCurrentValue(performance.totalValue) : '--',
-    });
-    renderOverallProfitLoss(performance);
+    renderPortfolioFromPrices(holdings, prices);
   };
 
   const getToday = () => {
@@ -601,5 +619,14 @@
     const holdingsTableBody = document.getElementById('holdings-table-body');
     holdingsTableBody?.addEventListener('click', handleHoldingDeletion);
     refreshPortfolioValues();
+
+    const unsubscribe = window.marketSocket?.subscribe(applyLiveMarketUpdate);
+    window.addEventListener('market-socket-status', (event) => {
+      const { status, message } = event.detail || {};
+      if (status === 'error' || status === 'disconnected') {
+        setAllocationStatus(`${message} Showing the last available prices.`);
+      }
+    });
+    window.addEventListener('pagehide', () => unsubscribe?.(), { once: true });
   });
 })();
