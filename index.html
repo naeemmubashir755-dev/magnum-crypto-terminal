@@ -10,9 +10,11 @@
     <script src="js/navigation.js" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/socket.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="js/global-market.js" defer></script>
     <script src="js/market-sentiment.js" defer></script>
     <script src="js/market-movers.js" defer></script>
+    <script src="js/market-breadth.js" defer></script>
     <script src="js/dashboard-trending.js" defer></script>
     <script src="js/utils.js" defer></script>
   </head>
@@ -76,6 +78,37 @@
           </article>
           <article class="stat-card"><h3>Active Cryptocurrencies</h3><p id="active-cryptocurrencies">--</p></article>
           <article class="stat-card"><h3>Active Exchanges</h3><p id="active-exchanges">--</p></article>
+        </div>
+      </section>
+
+      <section aria-labelledby="market-breadth-title" class="market-breadth-section">
+        <h2 id="market-breadth-title">Market Breadth</h2>
+        <div id="market-breadth-status" class="table-status" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Calculating Market Breadth...</span>
+        </div>
+        <div id="market-breadth-content" hidden>
+          <div class="market-breadth-metrics">
+            <article class="stat-card"><h3>Coins in Profit Today</h3><p id="breadth-profit-percentage">--</p></article>
+            <article class="stat-card"><h3>Coins in Loss Today</h3><p id="breadth-loss-percentage">--</p></article>
+            <article class="stat-card"><h3>Average 24h Performance</h3><p id="breadth-average-performance">--</p></article>
+            <article class="stat-card"><h3>Average Trading Volume</h3><p id="breadth-average-volume">--</p></article>
+          </div>
+          <p id="market-breadth-chart-status" class="market-breadth-chart-status" role="status"></p>
+          <div class="market-breadth-charts">
+            <article class="market-breadth-chart-card">
+              <h3>Profit vs. Loss</h3>
+              <div class="market-breadth-chart"><canvas id="market-breadth-distribution-chart" role="img" aria-label="Profit, loss, and unchanged market breadth distribution"></canvas></div>
+            </article>
+            <article class="market-breadth-chart-card">
+              <h3>Average Performance</h3>
+              <div class="market-breadth-chart"><canvas id="market-breadth-performance-chart" role="img" aria-label="Average 24 hour market performance"></canvas></div>
+            </article>
+            <article class="market-breadth-chart-card">
+              <h3>Average Volume</h3>
+              <div class="market-breadth-chart"><canvas id="market-breadth-volume-chart" role="img" aria-label="Average trading volume"></canvas></div>
+            </article>
+          </div>
         </div>
       </section>
 
