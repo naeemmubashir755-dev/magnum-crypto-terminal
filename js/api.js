@@ -22,6 +22,11 @@
     return requestBackend('/trending', 'We could not load trending coins right now. Please try again.');
   }
 
+  // Fetch normalized CoinGecko trending data for Dashboard market discovery.
+  async function fetchDashboardTrendingCoins() {
+    return requestBackend('/market/trending', 'Trending coins are currently unavailable.');
+  }
+
   // Fetch the latest assets activated on CoinGecko (availability depends on the API plan).
   async function fetchRecentlyAddedCoins() {
     return requestBackend('/coins/recent', 'Recently added coins are unavailable with the current CoinGecko API access.');
@@ -61,6 +66,7 @@
 
   window.fetchMarketData = fetchMarketData;
   window.fetchTrendingCoins = fetchTrendingCoins;
+  window.fetchDashboardTrendingCoins = fetchDashboardTrendingCoins;
   window.fetchRecentlyAddedCoins = fetchRecentlyAddedCoins;
   window.fetchMarketDataForIds = fetchMarketDataForIds;
   window.fetchGlobalMarketData = fetchGlobalMarketData;

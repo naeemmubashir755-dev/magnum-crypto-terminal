@@ -12,6 +12,7 @@
     <script src="js/global-market.js" defer></script>
     <script src="js/market-sentiment.js" defer></script>
     <script src="js/market-movers.js" defer></script>
+    <script src="js/dashboard-trending.js" defer></script>
     <script src="js/utils.js" defer></script>
   </head>
   <body>
@@ -74,6 +75,28 @@
           </article>
           <article class="stat-card"><h3>Active Cryptocurrencies</h3><p id="active-cryptocurrencies">--</p></article>
           <article class="stat-card"><h3>Active Exchanges</h3><p id="active-exchanges">--</p></article>
+        </div>
+      </section>
+
+      <section aria-labelledby="dashboard-trending-title" class="market-movers-section">
+        <h2 id="dashboard-trending-title">Trending Coins</h2>
+        <div id="dashboard-trending-status" class="table-status" role="status" aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Loading trending coins...</span>
+        </div>
+        <div class="portfolio-table-wrapper">
+          <table id="dashboard-trending-table" class="dashboard-trending-table" hidden>
+            <thead>
+              <tr>
+                <th scope="col">Trending Rank</th>
+                <th scope="col">Coin Name</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Price</th>
+                <th scope="col">Market Cap Rank</th>
+              </tr>
+            </thead>
+            <tbody id="dashboard-trending-body"></tbody>
+          </table>
         </div>
       </section>
 

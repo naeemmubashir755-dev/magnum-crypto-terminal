@@ -700,6 +700,32 @@ textarea:focus {
   margin: 2rem 0;
 }
 
+.dashboard-trending-table {
+  min-width: 44rem;
+  margin-top: 0;
+}
+
+.dashboard-trending-table td:nth-child(1),
+.dashboard-trending-table td:nth-child(4),
+.dashboard-trending-table td:nth-child(5),
+.dashboard-trending-table th:nth-child(1),
+.dashboard-trending-table th:nth-child(4),
+.dashboard-trending-table th:nth-child(5) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-trending-link {
+  color: var(--text-color);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.dashboard-trending-link:hover,
+.dashboard-trending-link:focus-visible {
+  color: var(--accent-color);
+}
+
 .global-market-section {
   margin-bottom: 2rem;
 }
