@@ -11,4 +11,10 @@ const register = async (request, response, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { register };
+const login = async (request, response, next) => {
+  try {
+    response.status(200).json(await authService.login(request.body));
+  } catch (error) { next(error); }
+};
+
+module.exports = { register, login };

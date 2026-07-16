@@ -14,4 +14,10 @@ const getUser = async (request, response, next) => {
   } catch (error) { next(error); }
 };
 
-module.exports = { createUser, getUser };
+const getCurrentUser = async (request, response, next) => {
+  try {
+    response.status(200).json(await userService.getUserById(request.auth.userId));
+  } catch (error) { next(error); }
+};
+
+module.exports = { createUser, getUser, getCurrentUser };

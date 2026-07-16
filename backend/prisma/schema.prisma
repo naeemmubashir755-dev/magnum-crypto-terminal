@@ -16,6 +16,7 @@ model User {
   createdAt    DateTime    @default(now())
   portfolios Portfolio[]
   watchlists Watchlist[]
+  refreshTokens RefreshToken[]
 }
 
 /// A named collection of cryptocurrency holdings owned by one user.
@@ -64,4 +65,18 @@ model WatchlistCoin {
 
   @@unique([watchlistId, coinId])
   @@index([coinId])
+}
+
+/// A hashed, server-side record of an issued refresh token.
+/// Storing only the hash prevents a database leak from exposing usable tokens.
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }

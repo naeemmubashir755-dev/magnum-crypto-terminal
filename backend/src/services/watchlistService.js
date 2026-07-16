@@ -24,9 +24,9 @@ class WatchlistService {
     });
   }
 
-  async getWatchlistById(id) {
-    const watchlist = await prisma.watchlist.findUnique({
-      where: { id },
+  async getWatchlistById(id, userId) {
+    const watchlist = await prisma.watchlist.findFirst({
+      where: { id, userId },
       include: watchlistWithCoins,
     });
 
@@ -34,15 +34,23 @@ class WatchlistService {
     return watchlist;
   }
 
-  async addCoin({ watchlistId, coinId }) {
+  async addCoin({ watchlistId, userId, coinId }) {
     if (!watchlistId || !coinId) {
       throw createHttpError(400, 'watchlistId and coinId are required.');
     }
 
+    const watchlist = await prisma.watchlist.findFirst({ where: { id: watchlistId, userId } });
+    if (!watchlist) throw createHttpError(404, 'Watchlist not found.');
+
     return prisma.watchlistCoin.create({ data: { watchlistId, coinId } });
   }
 
-  async removeCoin(id) {
+  async removeCoin(id, userId) {
+    const coin = await prisma.watchlistCoin.findFirst({
+      where: { id, watchlist: { userId } },
+    });
+    if (!coin) throw createHttpError(404, 'Watchlist coin not found.');
+
     await prisma.watchlistCoin.delete({ where: { id } });
   }
 }

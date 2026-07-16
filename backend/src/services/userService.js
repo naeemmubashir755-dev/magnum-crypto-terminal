@@ -39,6 +39,14 @@ class UserService {
     if (!user) throw createHttpError(404, 'User not found.');
     return user;
   }
+
+  /** Returns credentials only to the authentication service for password checks. */
+  async getUserForAuthenticationByEmail(email) {
+    return prisma.user.findUnique({
+      where: { email },
+      select: { id: true, username: true, email: true, passwordHash: true },
+    });
+  }
 }
 
 module.exports = new UserService();

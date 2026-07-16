@@ -24,9 +24,9 @@ class PortfolioService {
     });
   }
 
-  async getPortfolioById(id) {
-    const portfolio = await prisma.portfolio.findUnique({
-      where: { id },
+  async getPortfolioById(id, userId) {
+    const portfolio = await prisma.portfolio.findFirst({
+      where: { id, userId },
       include: portfolioWithHoldings,
     });
 
@@ -34,17 +34,25 @@ class PortfolioService {
     return portfolio;
   }
 
-  async addHolding({ portfolioId, coinId, quantity, averageBuyPrice }) {
+  async addHolding({ portfolioId, userId, coinId, quantity, averageBuyPrice }) {
     if (!portfolioId || !coinId || quantity === undefined) {
       throw createHttpError(400, 'portfolioId, coinId, and quantity are required.');
     }
+
+    const portfolio = await prisma.portfolio.findFirst({ where: { id: portfolioId, userId } });
+    if (!portfolio) throw createHttpError(404, 'Portfolio not found.');
 
     return prisma.holding.create({
       data: { portfolioId, coinId, quantity, averageBuyPrice },
     });
   }
 
-  async removeHolding(id) {
+  async removeHolding(id, userId) {
+    const holding = await prisma.holding.findFirst({
+      where: { id, portfolio: { userId } },
+    });
+    if (!holding) throw createHttpError(404, 'Holding not found.');
+
     await prisma.holding.delete({ where: { id } });
   }
 }

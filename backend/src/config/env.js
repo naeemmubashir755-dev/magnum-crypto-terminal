@@ -15,4 +15,8 @@ module.exports = {
   coinGeckoBaseUrl: requireEnvironmentValue('COINGECKO_BASE_URL'),
   fearGreedApiUrl: requireEnvironmentValue('FEAR_GREED_API_URL'),
   databaseUrl: requireEnvironmentValue('DATABASE_URL'),
+  jwtAccessSecret: requireEnvironmentValue('JWT_ACCESS_SECRET'),
+  jwtRefreshSecret: requireEnvironmentValue('JWT_REFRESH_SECRET'),
+  jwtAccessExpiresIn: requireEnvironmentValue('JWT_ACCESS_EXPIRES_IN'),
+  jwtRefreshExpiresIn: requireEnvironmentValue('JWT_REFRESH_EXPIRES_IN'),
 };
