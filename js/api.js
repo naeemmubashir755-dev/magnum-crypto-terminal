@@ -44,6 +44,11 @@
     return requestBackend('/global', 'We could not load the global market overview right now.');
   }
 
+  // Fetch normalized global market metrics for the Dashboard statistic cards.
+  async function fetchDashboardGlobalMarket() {
+    return requestBackend('/market/global', 'Global market data is currently unavailable.');
+  }
+
   // Alternative.me provides a free, public crypto Fear & Greed index.
   async function fetchFearGreedIndex() {
     return requestBackend('/fear-greed', 'The Fear & Greed index is currently unavailable.');
@@ -70,6 +75,7 @@
   window.fetchRecentlyAddedCoins = fetchRecentlyAddedCoins;
   window.fetchMarketDataForIds = fetchMarketDataForIds;
   window.fetchGlobalMarketData = fetchGlobalMarketData;
+  window.fetchDashboardGlobalMarket = fetchDashboardGlobalMarket;
   window.fetchFearGreedIndex = fetchFearGreedIndex;
   window.fetchMarketFearGreed = fetchMarketFearGreed;
   window.fetchCoinDetails = fetchCoinDetails;

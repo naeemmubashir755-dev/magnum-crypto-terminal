@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     volume: document.getElementById('global-volume'),
     btcDominance: document.getElementById('btc-dominance'),
     ethDominance: document.getElementById('eth-dominance'),
+    stablecoinDominance: document.getElementById('stablecoin-dominance'),
     cryptocurrencies: document.getElementById('active-cryptocurrencies'),
     exchanges: document.getElementById('active-exchanges'),
   };
@@ -21,14 +22,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     element.textContent = value;
   };
 
-  const renderGlobalData = ({ data }) => {
-    setText(fields.marketCap, compactCurrency.format(data.total_market_cap?.usd || 0));
-    setText(fields.volume, compactCurrency.format(data.total_volume?.usd || 0));
-    setText(fields.btcDominance, `${Number(data.market_cap_percentage?.btc || 0).toFixed(2)}%`);
-    setText(fields.ethDominance, `${Number(data.market_cap_percentage?.eth || 0).toFixed(2)}%`);
-    setText(fields.cryptocurrencies, wholeNumber.format(data.active_cryptocurrencies || 0));
-    // CoinGecko's global "markets" count represents the active market/exchange ecosystem.
-    setText(fields.exchanges, wholeNumber.format(data.markets || 0));
+  const formatCurrency = (value) => (Number.isFinite(Number(value)) ? compactCurrency.format(value) : '--');
+  const formatPercentage = (value) => (Number.isFinite(Number(value)) ? `${Number(value).toFixed(2)}%` : '--');
+  const formatNumber = (value) => (Number.isFinite(Number(value)) ? wholeNumber.format(value) : '--');
+
+  const renderGlobalData = (data) => {
+    setText(fields.marketCap, formatCurrency(data.totalMarketCap));
+    setText(fields.volume, formatCurrency(data.total24hVolume));
+    setText(fields.btcDominance, formatPercentage(data.bitcoinDominance));
+    setText(fields.ethDominance, formatPercentage(data.ethereumDominance));
+    setText(fields.stablecoinDominance, formatPercentage(data.stablecoinDominance));
+    setText(fields.cryptocurrencies, formatNumber(data.activeCryptocurrencies));
+    setText(fields.exchanges, formatNumber(data.activeMarkets));
   };
 
   const showGlobalError = (message) => {
@@ -37,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   try {
-    const globalData = await window.fetchGlobalMarketData();
+    const globalData = await window.fetchDashboardGlobalMarket();
     renderGlobalData(globalData);
     grid.hidden = false;
     status.remove();
