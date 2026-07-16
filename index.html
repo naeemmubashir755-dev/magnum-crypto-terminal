@@ -10,6 +10,7 @@
     <script src="js/navigation.js" defer></script>
     <script src="js/api.js" defer></script>
     <script src="js/global-market.js" defer></script>
+    <script src="js/market-sentiment.js" defer></script>
     <script src="js/market-movers.js" defer></script>
     <script src="js/utils.js" defer></script>
   </head>
@@ -64,7 +65,13 @@
           <article class="stat-card"><h3>24h Volume</h3><p id="global-volume">--</p></article>
           <article class="stat-card"><h3>BTC Dominance</h3><p id="btc-dominance">--</p></article>
           <article class="stat-card"><h3>ETH Dominance</h3><p id="eth-dominance">--</p></article>
-          <article class="stat-card"><h3>Fear &amp; Greed Index</h3><p id="fear-greed-index">Loading...</p><small>Source: <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">Alternative.me</a></small></article>
+          <article class="stat-card" aria-labelledby="fear-greed-title">
+            <h3 id="fear-greed-title">Fear &amp; Greed Index</h3>
+            <p id="fear-greed-value" aria-live="polite">Loading...</p>
+            <p id="fear-greed-classification">Loading classification...</p>
+            <small id="fear-greed-updated">Last updated: --</small>
+            <small>Source: <a href="https://alternative.me/crypto/fear-and-greed-index/" target="_blank" rel="noopener noreferrer">Alternative.me</a></small>
+          </article>
           <article class="stat-card"><h3>Active Cryptocurrencies</h3><p id="active-cryptocurrencies">--</p></article>
           <article class="stat-card"><h3>Active Exchanges</h3><p id="active-exchanges">--</p></article>
         </div>

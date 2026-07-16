@@ -44,6 +44,11 @@
     return requestBackend('/fear-greed', 'The Fear & Greed index is currently unavailable.');
   }
 
+  // Fetch the backend-normalized current Market Sentiment reading.
+  async function fetchMarketFearGreed() {
+    return requestBackend('/market/fear-greed', 'Market sentiment is currently unavailable.');
+  }
+
   // Fetch detailed information for one cryptocurrency by its CoinGecko id.
   async function fetchCoinDetails(id) {
     return requestBackend(`/coins/${encodeURIComponent(id)}`, 'We could not load the coin details right now. Please try again.');
@@ -60,6 +65,7 @@
   window.fetchMarketDataForIds = fetchMarketDataForIds;
   window.fetchGlobalMarketData = fetchGlobalMarketData;
   window.fetchFearGreedIndex = fetchFearGreedIndex;
+  window.fetchMarketFearGreed = fetchMarketFearGreed;
   window.fetchCoinDetails = fetchCoinDetails;
   window.fetchCoinHistory = fetchCoinHistory;
 })();

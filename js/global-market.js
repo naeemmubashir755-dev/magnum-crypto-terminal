@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     volume: document.getElementById('global-volume'),
     btcDominance: document.getElementById('btc-dominance'),
     ethDominance: document.getElementById('eth-dominance'),
-    fearGreed: document.getElementById('fear-greed-index'),
     cryptocurrencies: document.getElementById('active-cryptocurrencies'),
     exchanges: document.getElementById('active-exchanges'),
   };
@@ -32,12 +31,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     setText(fields.exchanges, wholeNumber.format(data.markets || 0));
   };
 
-  const renderFearGreed = ({ data }) => {
-    const latest = data?.[0];
-    if (!latest) throw new Error('No Fear & Greed data was returned.');
-    setText(fields.fearGreed, `${latest.value} (${latest.value_classification})`);
-  };
-
   const showGlobalError = (message) => {
     status.classList.add('error');
     status.textContent = message;
@@ -51,14 +44,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (error) {
     console.error('Unable to load global market data:', error);
     showGlobalError(error.message || 'Global market data is currently unavailable. Please try again later.');
-    return;
+    // Keep independent dashboard cards (including market sentiment) available.
+    grid.hidden = false;
   }
 
-  try {
-    const fearGreedData = await window.fetchFearGreedIndex();
-    renderFearGreed(fearGreedData);
-  } catch (error) {
-    console.error('Unable to load Fear & Greed index:', error);
-    setText(fields.fearGreed, 'Unavailable');
-  }
 });
