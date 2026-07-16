@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const getChange = (coin) => Number(coin.price_change_percentage_24h) || 0;
   const getVolume = (coin) => Number(coin.total_volume) || 0;
+  let receivedLiveUpdate = false;
 
   // Derive every movers list from the same market response to avoid duplicate API requests.
   const createMovers = (coins) => ({
@@ -66,17 +67,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   const showError = (message) => {
+    status.hidden = false;
     status.classList.add('error');
     status.textContent = message;
   };
 
-  try {
-    const coins = await window.fetchMarketData(100);
+  const renderMarketMovers = (coins) => {
+    if (!Array.isArray(coins) || !coins.length) return;
+
     renderMovers(createMovers(coins));
     grid.hidden = false;
-    status.remove();
+    status.classList.remove('error');
+    status.hidden = true;
+  };
+
+  const applyLiveMarketUpdate = (update) => {
+    if (!Array.isArray(update?.markets)) return;
+
+    receivedLiveUpdate = true;
+    renderMarketMovers(update.markets);
+  };
+
+  const unsubscribe = window.marketSocket?.subscribe(applyLiveMarketUpdate);
+  window.addEventListener('market-socket-status', (event) => {
+    const { status: socketStatus, message } = event.detail || {};
+    if ((socketStatus === 'error' || socketStatus === 'disconnected') && !grid.hidden) {
+      status.classList.remove('error');
+      status.hidden = false;
+      status.textContent = `${message} Showing the latest market movers.`;
+    }
+  });
+  window.addEventListener('pagehide', () => unsubscribe?.(), { once: true });
+
+  try {
+    const coins = await window.fetchMarketData(100);
+    // Do not overwrite a newer socket snapshot that arrived during the request.
+    if (!receivedLiveUpdate) renderMarketMovers(coins);
   } catch (error) {
     console.error('Unable to load market movers:', error);
-    showError(error.message || 'Market movers are currently unavailable. Please try again later.');
+    if (grid.hidden) {
+      showError(error.message || 'Market movers are currently unavailable. Please try again later.');
+    }
   }
 });
