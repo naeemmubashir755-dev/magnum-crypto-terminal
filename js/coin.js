@@ -14,6 +14,9 @@ const formatHistoryForChart = (history) => {
   return { labels, prices, volumes };
 };
 
+// Updated after the coin detail request so rule-based summaries can name the asset.
+let activeCoinName = 'This asset';
+
 // Calculate the 14-period RSI with Wilder's smoothed average gain and loss method.
 const calculateRsi = (prices, period = 14) => {
   const validPrices = prices.map(Number).filter(Number.isFinite);
@@ -692,60 +695,89 @@ const updateAiSummary = (prices, volumes) => {
     trend: document.getElementById('ai-summary-trend'),
     momentum: document.getElementById('ai-summary-momentum'),
     risk: document.getElementById('ai-summary-risk'),
+    structure: document.getElementById('ai-summary-structure'),
+    confidence: document.getElementById('ai-summary-confidence'),
     support: document.getElementById('ai-summary-support'),
     resistance: document.getElementById('ai-summary-resistance'),
+    narrative: document.getElementById('ai-summary-narrative'),
   };
   if (!Object.values(elements).every(Boolean)) return;
 
   const validPrices = prices.map(Number).filter(Number.isFinite);
-  if (validPrices.length < 2) {
-    Object.values(elements).forEach((element) => { element.textContent = 'Insufficient data'; });
+  if (!window.generateAiMarketSummary || validPrices.length < 2) {
+    elements.trend.textContent = 'Unavailable';
+    elements.momentum.textContent = 'Unavailable';
+    elements.risk.textContent = 'Unavailable';
+    elements.structure.textContent = 'Unavailable';
+    elements.confidence.textContent = '--';
+    elements.support.textContent = '--';
+    elements.resistance.textContent = '--';
+    elements.narrative.textContent = 'Insufficient historical data is available to generate a market summary.';
     return;
   }
 
   const latestPrice = validPrices.at(-1);
-  const periodStartPrice = validPrices[0];
-  const priceChange = ((latestPrice - periodStartPrice) / periodStartPrice) * 100;
-  const trendLabel = priceChange > 2 ? 'Uptrend' : priceChange < -2 ? 'Downtrend' : 'Sideways';
   const volumeTrend = getVolumeTrend(volumes);
-
   const rsi = calculateRsi(validPrices);
   const macd = calculateMacd(validPrices);
-  const latestMacd = getLastFiniteValue(macd.macdLine);
-  const latestSignal = getLastFiniteValue(macd.signalLine);
+  const macdPair = getLatestMacdPair(macd);
   const ema20 = getLastFiniteValue(calculateEma(validPrices, 20));
   const ema50 = getLastFiniteValue(calculateEma(validPrices, 50));
-  const bands = calculateBollingerBands(validPrices);
-  const upperBand = getLastFiniteValue(bands.upperBand);
-  const lowerBand = getLastFiniteValue(bands.lowerBand);
+  const priceTrend = getMarketTrendLabel(validPrices);
+  const marketStructure = getMarketStructure(latestPrice, ema20, ema50);
+  const supportResistance = window.detectSupportResistance?.(validPrices);
+  const signalAnalysis = window.analyzeTechnicalSignals?.({
+    rsi,
+    macd: {
+      line: macdPair.latest?.line,
+      signal: macdPair.latest?.signal,
+      previousLine: macdPair.previous?.line,
+      previousSignal: macdPair.previous?.signal,
+    },
+    ema20,
+    ema50,
+    currentPrice: latestPrice,
+    volumeTrend,
+    supportResistance,
+  });
+  const riskAssessment = window.assessMarketRisk?.({
+    rsi,
+    volatility: window.calculatePriceVolatility?.(validPrices),
+    volumeTrend,
+    priceTrend,
+    marketStructure,
+  });
+  const summary = window.generateAiMarketSummary({
+    coinName: activeCoinName,
+    currentPrice: latestPrice,
+    rsi,
+    macd: {
+      line: macdPair.latest?.line,
+      signal: macdPair.latest?.signal,
+      previousLine: macdPair.previous?.line,
+      previousSignal: macdPair.previous?.signal,
+    },
+    ema20,
+    ema50,
+    volumeTrend,
+    priceTrend,
+    marketStructure,
+    supportResistance,
+    riskAssessment,
+    signalAnalysis,
+  });
   const supportResistanceWindow = validPrices.slice(-Math.min(20, validPrices.length));
-  const support = Math.min(...supportResistanceWindow);
-  const resistance = Math.max(...supportResistanceWindow);
+  const support = supportResistance?.primarySupport ?? Math.min(...supportResistanceWindow);
+  const resistance = supportResistance?.primaryResistance ?? Math.max(...supportResistanceWindow);
 
-  elements.trend.textContent = `${trendLabel} (${priceChange >= 0 ? '+' : ''}${priceChange.toFixed(2)}%); ${volumeTrend.label}.`;
-
-  const macdLabel = Number.isFinite(latestMacd) && Number.isFinite(latestSignal)
-    ? (latestMacd >= latestSignal ? 'MACD above signal' : 'MACD below signal')
-    : 'MACD unavailable';
-  const averageLabel = Number.isFinite(ema20) && Number.isFinite(ema50)
-    ? (latestPrice >= ema20 && latestPrice >= ema50 ? 'price above EMA 20/50' : 'price below an EMA')
-    : 'moving averages unavailable';
-  elements.momentum.textContent = `${macdLabel}; ${averageLabel}.`;
-
-  if (Number.isFinite(rsi) && rsi >= 70) {
-    elements.risk.textContent = `Elevated — RSI ${rsi.toFixed(1)} is overbought.`;
-  } else if (Number.isFinite(rsi) && rsi <= 30) {
-    elements.risk.textContent = `Elevated — RSI ${rsi.toFixed(1)} is oversold.`;
-  } else if (Number.isFinite(upperBand) && latestPrice >= upperBand) {
-    elements.risk.textContent = 'Elevated — price is testing the upper Bollinger Band.';
-  } else if (Number.isFinite(lowerBand) && latestPrice <= lowerBand) {
-    elements.risk.textContent = 'Elevated — price is testing the lower Bollinger Band.';
-  } else {
-    elements.risk.textContent = 'Moderate — RSI and price remain within normal bands.';
-  }
-
-  elements.support.textContent = `${formatSummaryPrice(support)} (recent range low)`;
-  elements.resistance.textContent = `${formatSummaryPrice(resistance)} (recent range high)`;
+  elements.trend.textContent = summary.overallTrend;
+  elements.momentum.textContent = summary.momentum;
+  elements.structure.textContent = summary.marketStructure;
+  elements.risk.textContent = summary.riskLevel;
+  elements.confidence.textContent = `${summary.confidenceScore}%`;
+  elements.support.textContent = `${formatSummaryPrice(support)} (primary)`;
+  elements.resistance.textContent = `${formatSummaryPrice(resistance)} (primary)`;
+  elements.narrative.textContent = summary.summary;
 };
 
 const initializeMacdCollapse = (section, container) => {
@@ -1132,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Fetch the detailed coin information from the shared API helper.
     const coin = await window.fetchCoinDetails(coinId);
+    activeCoinName = coin.name || 'This asset';
 
     // Log the full response for debugging purposes.
     console.log('Coin details response:', coin);

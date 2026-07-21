@@ -189,6 +189,15 @@ table tbody tr:hover {
   grid-column: 1 / -1;
 }
 
+.ai-market-summary-narrative {
+  grid-column: 1 / -1;
+}
+
+.ai-market-summary-narrative p {
+  line-height: 1.6;
+  font-weight: 400;
+}
+
 .ai-analysis-reasoning ul {
   margin: 0;
   padding-left: 1.25rem;

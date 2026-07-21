@@ -1,72 +1,122 @@
 (function () {
-  // Same-origin deployments use /api; hosts may inject MAGNUM_API_URL at runtime.
-  const API_BASE_URL = window.MAGNUM_API_URL || '/api';
+  // Backend URL
+  const API_BASE_URL =
+    window.MAGNUM_API_URL || "http://localhost:5000/api";
 
   // All frontend data requests pass through the Magnum backend.
   async function requestBackend(path, fallbackMessage) {
-    const response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: { Accept: 'application/json' },
+    const url = `${API_BASE_URL}${path}`;
+
+    console.log("======================================");
+    console.log("Fetching:", url);
+
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+      },
     });
+
+    console.log("Status:", response.status);
+
     const payload = await response.json().catch(() => null);
-    if (!response.ok) throw new Error(payload?.message || fallbackMessage);
+
+    console.log("Response:", payload);
+
+    if (!response.ok) {
+      throw new Error(payload?.message || fallbackMessage);
+    }
+
     return payload;
   }
 
   // Fetch the top cryptocurrencies from CoinGecko's public markets endpoint.
   async function fetchMarketData(limit = 100) {
-    return requestBackend(`/markets?limit=${encodeURIComponent(limit)}`, 'We could not load the latest market data right now. Please try again.');
+    return requestBackend(
+      `/markets?limit=${encodeURIComponent(limit)}`,
+      "We could not load the latest market data right now. Please try again."
+    );
   }
 
-  // Fetch CoinGecko's search-popularity ranking for trending coins.
+  // Fetch CoinGecko's search-popularity ranking.
   async function fetchTrendingCoins() {
-    return requestBackend('/trending', 'We could not load trending coins right now. Please try again.');
+    return requestBackend(
+      "/trending",
+      "We could not load trending coins right now. Please try again."
+    );
   }
 
-  // Fetch normalized CoinGecko trending data for Dashboard market discovery.
+  // Dashboard Trending Coins
   async function fetchDashboardTrendingCoins() {
-    return requestBackend('/market/trending', 'Trending coins are currently unavailable.');
+    return requestBackend(
+      "/market/trending",
+      "Trending coins are currently unavailable."
+    );
   }
 
-  // Fetch the latest assets activated on CoinGecko (availability depends on the API plan).
+  // Recently Added Coins
   async function fetchRecentlyAddedCoins() {
-    return requestBackend('/coins/recent', 'Recently added coins are unavailable with the current CoinGecko API access.');
+    return requestBackend(
+      "/coins/recent",
+      "Recently added coins are unavailable."
+    );
   }
 
-  // Fetch market fields for a known set of CoinGecko ids, used to enrich discovery lists.
+  // Fetch markets for ids
   async function fetchMarketDataForIds(ids) {
     if (!ids?.length) return [];
 
-    return requestBackend(`/markets?ids=${encodeURIComponent(ids.join(','))}`, 'We could not load market prices for these coins right now.');
+    return requestBackend(
+      `/markets?ids=${encodeURIComponent(ids.join(","))}`,
+      "We could not load market prices."
+    );
   }
 
-  // Fetch aggregate cryptocurrency market statistics for the dashboard overview.
+  // Original global endpoint
   async function fetchGlobalMarketData() {
-    return requestBackend('/global', 'We could not load the global market overview right now.');
+    return requestBackend(
+      "/global",
+      "We could not load global market data."
+    );
   }
 
-  // Fetch normalized global market metrics for the Dashboard statistic cards.
+  // Dashboard Global Market
   async function fetchDashboardGlobalMarket() {
-    return requestBackend('/market/global', 'Global market data is currently unavailable.');
+    return requestBackend(
+      "/market/global",
+      "Global market data is currently unavailable."
+    );
   }
 
-  // Alternative.me provides a free, public crypto Fear & Greed index.
+  // Fear & Greed
   async function fetchFearGreedIndex() {
-    return requestBackend('/fear-greed', 'The Fear & Greed index is currently unavailable.');
+    return requestBackend(
+      "/fear-greed",
+      "Fear & Greed data unavailable."
+    );
   }
 
-  // Fetch the backend-normalized current Market Sentiment reading.
+  // Dashboard Fear & Greed
   async function fetchMarketFearGreed() {
-    return requestBackend('/market/fear-greed', 'Market sentiment is currently unavailable.');
+    return requestBackend(
+      "/market/fear-greed",
+      "Market sentiment unavailable."
+    );
   }
 
-  // Fetch detailed information for one cryptocurrency by its CoinGecko id.
+  // Coin Details
   async function fetchCoinDetails(id) {
-    return requestBackend(`/coins/${encodeURIComponent(id)}`, 'We could not load the coin details right now. Please try again.');
+    return requestBackend(
+      `/coins/${encodeURIComponent(id)}`,
+      "Unable to load coin details."
+    );
   }
 
-  // Fetch historical price and market data for a cryptocurrency over a specified period.
+  // Coin History
   async function fetchCoinHistory(id, days) {
-    return requestBackend(`/coins/${encodeURIComponent(id)}/history?days=${encodeURIComponent(days)}`, 'We could not load the price history right now. Please try again.');
+    return requestBackend(
+      `/coins/${encodeURIComponent(id)}/history?days=${encodeURIComponent(days)}`,
+      "Unable to load history."
+    );
   }
 
   window.fetchMarketData = fetchMarketData;

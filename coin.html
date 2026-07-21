@@ -20,6 +20,7 @@
   <script src="js/supportResistance.js" defer></script>
   <script src="js/riskEngine.js" defer></script>
   <script src="js/aiSignals.js" defer></script>
+  <script src="js/aiMarketSummary.js" defer></script>
   <script src="js/coin.js" defer></script>
 </head>
   <body>
@@ -128,7 +129,7 @@
         <h2 id="ai-summary-title">AI Market Summary</h2>
         <div class="stats-grid" role="list">
           <article class="stat-card" role="listitem">
-            <h3>Trend</h3>
+            <h3>Overall Trend</h3>
             <p id="ai-summary-trend">Loading historical data...</p>
           </article>
           <article class="stat-card" role="listitem">
@@ -136,8 +137,16 @@
             <p id="ai-summary-momentum">--</p>
           </article>
           <article class="stat-card" role="listitem">
-            <h3>Risk</h3>
+            <h3>Risk Level</h3>
             <p id="ai-summary-risk">--</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Market Structure</h3>
+            <p id="ai-summary-structure">--</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Confidence Score</h3>
+            <p id="ai-summary-confidence">--</p>
           </article>
           <article class="stat-card" role="listitem">
             <h3>Support</h3>
@@ -146,6 +155,10 @@
           <article class="stat-card" role="listitem">
             <h3>Resistance</h3>
             <p id="ai-summary-resistance">--</p>
+          </article>
+          <article class="stat-card ai-market-summary-narrative" role="listitem">
+            <h3>Summary</h3>
+            <p id="ai-summary-narrative">Waiting for historical data...</p>
           </article>
         </div>
       </section>
