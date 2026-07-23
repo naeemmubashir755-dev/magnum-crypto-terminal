@@ -332,6 +332,16 @@ const formatSummaryPrice = (value) => new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
 }).format(value);
 
+// Preserve useful precision for low-priced assets in the trade setup panel.
+const formatTradeSetupPrice = (value) => {
+  if (!Number.isFinite(value)) return '--';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: Math.abs(value) < 1 ? 8 : 2,
+  }).format(value);
+};
+
 const getVolumeTrend = (volumes, period = 20) => {
   const validVolumes = volumes.map(Number).filter(Number.isFinite);
   if (validVolumes.length < 2) return { label: 'volume unavailable', change: null };
@@ -780,6 +790,108 @@ const updateAiSummary = (prices, volumes) => {
   elements.narrative.textContent = summary.summary;
 };
 
+// Gather existing indicator values, then hand level calculations to the reusable trade-setup module.
+const updateAiTradeSetup = (prices, volumes) => {
+  const elements = {
+    entry: document.getElementById('ai-trade-setup-entry'),
+    bias: document.getElementById('ai-trade-setup-bias'),
+    stopLoss: document.getElementById('ai-trade-setup-stop-loss'),
+    takeProfit: document.getElementById('ai-trade-setup-take-profit'),
+    riskReward: document.getElementById('ai-trade-setup-risk-reward'),
+    explanation: document.getElementById('ai-trade-setup-explanation'),
+  };
+  if (!Object.values(elements).every(Boolean)) return;
+
+  const showUnavailable = (message) => {
+    elements.entry.textContent = '--';
+    elements.bias.textContent = 'Setup unavailable';
+    elements.stopLoss.textContent = '--';
+    elements.takeProfit.textContent = '--';
+    elements.riskReward.textContent = '--';
+    elements.explanation.textContent = message;
+  };
+
+  const validPrices = prices.map(Number).filter(Number.isFinite);
+  if (!window.generateAiTradeSetup || validPrices.length < 2) {
+    showUnavailable('Insufficient historical data is available to calculate a rule-based trade setup.');
+    return;
+  }
+
+  const currentPrice = validPrices.at(-1);
+  const rsi = calculateRsi(validPrices);
+  const macd = calculateMacd(validPrices);
+  const macdPair = getLatestMacdPair(macd);
+  const ema20 = getLastFiniteValue(calculateEma(validPrices, 20));
+  const ema50 = getLastFiniteValue(calculateEma(validPrices, 50));
+  const volumeTrend = getVolumeTrend(volumes);
+  const priceTrend = getMarketTrendLabel(validPrices);
+  const marketStructure = getMarketStructure(currentPrice, ema20, ema50);
+  const supportResistance = window.detectSupportResistance?.(validPrices);
+  const volatility = window.calculatePriceVolatility?.(validPrices);
+  const signalAnalysis = window.analyzeTechnicalSignals?.({
+    rsi,
+    macd: {
+      line: macdPair.latest?.line,
+      signal: macdPair.latest?.signal,
+      previousLine: macdPair.previous?.line,
+      previousSignal: macdPair.previous?.signal,
+    },
+    ema20,
+    ema50,
+    currentPrice,
+    volumeTrend,
+    supportResistance,
+  });
+  const riskAssessment = window.assessMarketRisk?.({
+    rsi,
+    volatility,
+    volumeTrend,
+    priceTrend,
+    marketStructure,
+  });
+  const setup = window.generateAiTradeSetup({
+    currentPrice,
+    rsi,
+    macd: {
+      line: macdPair.latest?.line,
+      signal: macdPair.latest?.signal,
+    },
+    ema20,
+    ema50,
+    volumeTrend,
+    priceTrend,
+    marketStructure,
+    supportResistance,
+    volatility,
+    riskAssessment,
+    signalAnalysis,
+  });
+
+  if (!setup) {
+    showUnavailable('The trade setup engine could not calculate levels from the available indicators.');
+    return;
+  }
+
+  elements.bias.textContent = setup.bias === 'Wait'
+    ? 'Wait for confirmation'
+    : setup.bias + '-biased setup';
+  elements.explanation.textContent = setup.explanation;
+  if (!setup.entryZone || !Number.isFinite(setup.stopLoss)
+    || !Number.isFinite(setup.takeProfit) || !Number.isFinite(setup.riskReward)) {
+    elements.entry.textContent = 'Wait';
+    elements.stopLoss.textContent = '--';
+    elements.takeProfit.textContent = '--';
+    elements.riskReward.textContent = '--';
+    return;
+  }
+
+  elements.entry.textContent = formatTradeSetupPrice(setup.entryZone.low)
+    + ' to ' + formatTradeSetupPrice(setup.entryZone.high);
+  elements.stopLoss.textContent = formatTradeSetupPrice(setup.stopLoss);
+  elements.takeProfit.textContent = formatTradeSetupPrice(setup.takeProfit);
+  elements.riskReward.textContent = '1:' + setup.riskReward.toFixed(2);
+};
+
 const initializeMacdCollapse = (section, container) => {
   const toggle = document.getElementById('macd-toggle');
   if (!toggle || toggle.dataset.initialized) return;
@@ -1111,6 +1223,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     renderMacdChart(labels, prices);
     updateRsiDisplay(prices);
     updateAiSummary(prices, volumes);
+    updateAiTradeSetup(prices, volumes);
     updateTradingSignalDisplay(prices, volumes);
     updateAiTradingAnalysis(prices, volumes);
     updateSupportResistanceDisplay(prices);
@@ -1120,6 +1233,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     updateRsiDisplay([]);
     updateVolumeStatistics([]);
     updateAiSummary([], []);
+    updateAiTradeSetup([], []);
     updateTradingSignalDisplay([], []);
     updateAiTradingAnalysis([], []);
     updateSupportResistanceDisplay([]);

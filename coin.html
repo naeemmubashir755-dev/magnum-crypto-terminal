@@ -21,6 +21,7 @@
   <script src="js/riskEngine.js" defer></script>
   <script src="js/aiSignals.js" defer></script>
   <script src="js/aiMarketSummary.js" defer></script>
+  <script src="js/aiTradeSetup.js" defer></script>
   <script src="js/coin.js" defer></script>
 </head>
   <body>
@@ -159,6 +160,34 @@
           <article class="stat-card ai-market-summary-narrative" role="listitem">
             <h3>Summary</h3>
             <p id="ai-summary-narrative">Waiting for historical data...</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Rule-based AI Trade Setup -->
+      <section aria-labelledby="ai-trade-setup-title" class="stats-section" style="margin-bottom: 2rem;">
+        <h2 id="ai-trade-setup-title">AI Trade Setup</h2>
+        <div class="stats-grid" role="list" aria-live="polite">
+          <article class="stat-card" role="listitem">
+            <h3>Suggested Entry Zone</h3>
+            <p id="ai-trade-setup-entry">--</p>
+            <small id="ai-trade-setup-bias" class="ai-trade-setup-bias">Waiting for historical data...</small>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Suggested Stop Loss</h3>
+            <p id="ai-trade-setup-stop-loss">--</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Suggested Take Profit</h3>
+            <p id="ai-trade-setup-take-profit">--</p>
+          </article>
+          <article class="stat-card" role="listitem">
+            <h3>Risk / Reward Ratio</h3>
+            <p id="ai-trade-setup-risk-reward">--</p>
+          </article>
+          <article class="stat-card ai-trade-setup-explanation" role="listitem">
+            <h3>Setup Rationale</h3>
+            <p id="ai-trade-setup-explanation">Waiting for historical data...</p>
           </article>
         </div>
       </section>

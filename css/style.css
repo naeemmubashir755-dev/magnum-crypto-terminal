@@ -198,6 +198,21 @@ table tbody tr:hover {
   font-weight: 400;
 }
 
+.ai-trade-setup-explanation {
+  grid-column: 1 / -1;
+}
+
+.ai-trade-setup-explanation p {
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+.ai-trade-setup-bias {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--muted-text-color);
+}
+
 .ai-analysis-reasoning ul {
   margin: 0;
   padding-left: 1.25rem;
