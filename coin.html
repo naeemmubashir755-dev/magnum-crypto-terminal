@@ -22,6 +22,7 @@
   <script src="js/aiSignals.js" defer></script>
   <script src="js/aiMarketSummary.js" defer></script>
   <script src="js/aiTradeSetup.js" defer></script>
+  <script src="js/strategyEngine.js" defer></script>
   <script src="js/coin.js" defer></script>
 </head>
   <body>
@@ -188,6 +189,17 @@
           <article class="stat-card ai-trade-setup-explanation" role="listitem">
             <h3>Setup Rationale</h3>
             <p id="ai-trade-setup-explanation">Waiting for historical data...</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Rule-based Strategy Engine -->
+      <section aria-labelledby="strategy-engine-title" class="stats-section" style="margin-bottom: 2rem;">
+        <h2 id="strategy-engine-title">Strategy Engine</h2>
+        <div id="strategy-engine-list" class="strategy-engine-grid" role="list" aria-live="polite">
+          <article class="stat-card strategy-engine-placeholder" role="listitem">
+            <h3>Loading strategies</h3>
+            <p>Evaluating current market conditions...</p>
           </article>
         </div>
       </section>

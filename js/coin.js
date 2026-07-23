@@ -892,6 +892,129 @@ const updateAiTradeSetup = (prices, volumes) => {
   elements.riskReward.textContent = '1:' + setup.riskReward.toFixed(2);
 };
 
+const renderStrategyEngineMessage = (message) => {
+  const list = document.getElementById('strategy-engine-list');
+  if (!list) return;
+
+  const card = document.createElement('article');
+  card.className = 'stat-card strategy-engine-placeholder';
+  card.setAttribute('role', 'listitem');
+  const title = document.createElement('h3');
+  title.textContent = 'Strategy Engine';
+  const detail = document.createElement('p');
+  detail.textContent = message;
+  card.append(title, detail);
+  list.replaceChildren(card);
+};
+
+const renderStrategyEngine = (strategies) => {
+  const list = document.getElementById('strategy-engine-list');
+  if (!list) return;
+
+  const cards = document.createDocumentFragment();
+  strategies.forEach((strategy) => {
+    const status = strategy.status === 'Active' ? 'Active' : 'Inactive';
+    const confidence = Number(strategy.confidence);
+    const card = document.createElement('article');
+    card.className = 'stat-card strategy-card';
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('aria-label', strategy.name + ' strategy: ' + status);
+
+    const header = document.createElement('div');
+    header.className = 'strategy-card-header';
+    const name = document.createElement('h3');
+    name.textContent = strategy.name;
+    const badge = document.createElement('span');
+    badge.className = 'strategy-status strategy-status-' + status.toLowerCase();
+    badge.textContent = 'Status: ' + status;
+    header.append(name, badge);
+
+    const confidenceRow = document.createElement('p');
+    confidenceRow.className = 'strategy-confidence';
+    const confidenceLabel = document.createElement('span');
+    confidenceLabel.textContent = 'Confidence';
+    const confidenceValue = document.createElement('strong');
+    confidenceValue.textContent = Number.isFinite(confidence) ? confidence + '%' : '--';
+    confidenceRow.append(confidenceLabel, confidenceValue);
+
+    const reasoning = document.createElement('p');
+    reasoning.className = 'strategy-reasoning';
+    reasoning.textContent = 'Reasoning: ' + (strategy.reasoning || 'No strategy reasoning is available.');
+    card.append(header, confidenceRow, reasoning);
+    cards.appendChild(card);
+  });
+  list.replaceChildren(cards);
+};
+
+const getStrategyBreakoutRange = (prices, lookback = 20) => {
+  const priorPrices = prices.slice(-(lookback + 1), -1);
+  if (priorPrices.length < lookback) return { high: null, low: null };
+  return {
+    high: Math.max(...priorPrices),
+    low: Math.min(...priorPrices),
+  };
+};
+
+// Keep the page adapter thin: calculate existing indicators here, then delegate rules to strategyEngine.js.
+const updateStrategyEngine = (prices, volumes) => {
+  const validPrices = prices.map(Number).filter(Number.isFinite);
+  if (!window.strategyEngine?.evaluate || validPrices.length < 2) {
+    renderStrategyEngineMessage(
+      'Historical price data is required before the built-in strategies can be evaluated.',
+    );
+    return;
+  }
+
+  const currentPrice = validPrices.at(-1);
+  const rsi = calculateRsi(validPrices);
+  const macd = calculateMacd(validPrices);
+  const macdPair = getLatestMacdPair(macd);
+  const ema20 = getLastFiniteValue(calculateEma(validPrices, 20));
+  const ema50 = getLastFiniteValue(calculateEma(validPrices, 50));
+  const volumeTrend = getVolumeTrend(volumes);
+  const priceTrend = getMarketTrendLabel(validPrices);
+  const marketStructure = getMarketStructure(currentPrice, ema20, ema50);
+  const supportResistance = window.detectSupportResistance?.(validPrices);
+  const bollinger = calculateBollingerBands(validPrices);
+  const breakoutRange = getStrategyBreakoutRange(validPrices);
+
+  try {
+    const strategies = window.strategyEngine.evaluate({
+      prices: validPrices,
+      currentPrice,
+      rsi,
+      macd: {
+        line: macdPair.latest?.line,
+        signal: macdPair.latest?.signal,
+        previousLine: macdPair.previous?.line,
+        previousSignal: macdPair.previous?.signal,
+      },
+      ema20,
+      ema50,
+      volumeTrend,
+      priceTrend,
+      marketStructure,
+      supportResistance,
+      bollingerBands: {
+        upper: getLastFiniteValue(bollinger.upperBand),
+        middle: getLastFiniteValue(bollinger.middleBand),
+        lower: getLastFiniteValue(bollinger.lowerBand),
+      },
+      breakoutHigh: breakoutRange.high,
+      breakoutLow: breakoutRange.low,
+    });
+
+    if (!Array.isArray(strategies) || !strategies.length) {
+      renderStrategyEngineMessage('No built-in strategies are currently available.');
+      return;
+    }
+    renderStrategyEngine(strategies);
+  } catch (strategyError) {
+    console.error('Could not evaluate strategies:', strategyError);
+    renderStrategyEngineMessage('Strategy conditions could not be evaluated right now.');
+  }
+};
+
 const initializeMacdCollapse = (section, container) => {
   const toggle = document.getElementById('macd-toggle');
   if (!toggle || toggle.dataset.initialized) return;
@@ -1224,6 +1347,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     updateRsiDisplay(prices);
     updateAiSummary(prices, volumes);
     updateAiTradeSetup(prices, volumes);
+    updateStrategyEngine(prices, volumes);
     updateTradingSignalDisplay(prices, volumes);
     updateAiTradingAnalysis(prices, volumes);
     updateSupportResistanceDisplay(prices);
@@ -1234,6 +1358,7 @@ const loadHistoryAndRenderChart = async (coinId, days) => {
     updateVolumeStatistics([]);
     updateAiSummary([], []);
     updateAiTradeSetup([], []);
+    updateStrategyEngine([], []);
     updateTradingSignalDisplay([], []);
     updateAiTradingAnalysis([], []);
     updateSupportResistanceDisplay([]);
